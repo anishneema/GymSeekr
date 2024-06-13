@@ -15,19 +15,11 @@ const HomeScreen = ({ navigation }) => {
       <View style={styles.content}>
         <Text style={styles.heading}>Made for Gym enthusiasts</Text>
         <View style={styles.headerContainer}>
-          <Text style={styles.heading}>Welcome to</Text>
+          <Text style={styles.heading}>Welcome to Finding Nearby Gyms</Text>
           <Text style={styles.appName}>Powerlifting App</Text>
           <View style={styles.descriptionContainer}>
             <Text style={styles.descriptionText}>Find nearby gyms,</Text>
-            <Text style={styles.descriptionText}>log your workouts,</Text>
-            <Text style={styles.descriptionText}>and crush your goals</Text>
           </View>
-          <TouchableOpacity
-            style={styles.workoutLogButton}
-            onPress={() => navigation.navigate('WorkoutLog')}
-          >
-            <Text style={styles.workoutLogButtonText}>View Workout Log</Text>
-          </TouchableOpacity>
         </View>
       </View>
     </View>
