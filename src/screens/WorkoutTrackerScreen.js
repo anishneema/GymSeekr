@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -19,18 +19,28 @@ const WorkoutTrackerScreen = ({ navigation }) => {
     }
   };
 
-    const saveWorkout = async () => {
-        if (exercises.length > 0) {
-          try {
-            await AsyncStorage.setItem('@workout_log', JSON.stringify(exercises));
-            navigation.navigate('WorkoutLog');
-            setExercises([]);
-          } catch (e) {
-            console.error(e);
-          }
-        }
-      };
-    
+  const saveWorkout = async () => {
+    if (exercises.length > 0) {
+      try {
+        // Get the existing workout log from storage
+        const existingWorkouts = await AsyncStorage.getItem('@workout_log');
+        const workouts = existingWorkouts ? JSON.parse(existingWorkouts) : [];
+
+        // Add the new workout
+        workouts.push(exercises);
+
+        // Save the updated workout log
+        await AsyncStorage.setItem('@workout_log', JSON.stringify(workouts));
+
+        // Clear the exercises array and navigate to the WorkoutLog screen
+        setExercises([]);
+        navigation.navigate('WorkoutLog');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
   const renderExercise = ({ item }) => (
     <View style={styles.exerciseContainer}>
       <Text style={styles.exerciseText}>{item.exercise}</Text>

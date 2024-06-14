@@ -1,22 +1,28 @@
-// WorkoutLogScreen.js
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+
 const WorkoutLogScreen = () => {
   const [workoutLog, setWorkoutLog] = useState([]);
-  useEffect(() => {
-    const loadWorkoutLog = async () => {
-      try {
-        const savedWorkoutLog = await AsyncStorage.getItem('@workout_log');
-        if (savedWorkoutLog !== null) {
-          setWorkoutLog(JSON.parse(savedWorkoutLog));
-        }
-      } catch (e) {
-        console.error(e);
+
+  const loadWorkoutLog = async () => {
+    try {
+      const savedWorkoutLog = await AsyncStorage.getItem('@workout_log');
+      if (savedWorkoutLog !== null) {
+        setWorkoutLog(JSON.parse(savedWorkoutLog));
       }
-    };
-    loadWorkoutLog();
-  }, []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadWorkoutLog();
+    }, [])
+  );
+
   const renderExercise = ({ item }) => (
     <View style={styles.exerciseContainer}>
       <Text style={styles.exerciseText}>{item.exercise}</Text>
@@ -25,6 +31,7 @@ const WorkoutLogScreen = () => {
       </Text>
     </View>
   );
+
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Workout Log</Text>
@@ -37,6 +44,7 @@ const WorkoutLogScreen = () => {
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -65,5 +73,5 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
 });
-export default WorkoutLogScreen;
 
+export default WorkoutLogScreen;

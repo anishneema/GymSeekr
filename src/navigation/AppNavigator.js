@@ -7,7 +7,8 @@ import HomeScreen from '../screens/HomeScreen';
 import LoginScreen from '../screens/LoginScreen';
 import WorkoutTrackerScreen from '../screens/WorkoutTrackerScreen';
 import WorkoutLogScreen from '../screens/WorkoutLogScreen';
-import NearbyGymsScreen from '../screens/NearbyGymsScreen'; // Assuming you have a NearbyGymsScreen
+import NearbyGymsScreen from '../screens/NearbyGymsScreen';
+import SettingsScreen from '../screens/SettingsScreen'; // Import the SettingsScreen component
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -25,30 +26,18 @@ const MainNavigator = () => (
           iconName = 'document-text';
         } else if (route.name === 'NearbyGyms') {
           iconName = 'map';
-        } else if (route.name === 'Logout') {
-          iconName = 'log-out';
+        } else if (route.name === 'Settings') {
+          iconName = 'settings';
         }
         return <Ionicons name={iconName} size={size} color={color} />;
       },
     })}
   >
-    <Tab.Screen name="Home" component={HomeScreen} />
-    <Tab.Screen name="WorkoutTracker" component={WorkoutTrackerScreen} />
-    <Tab.Screen name="WorkoutLog" component={WorkoutLogScreen} />
-    <Tab.Screen name="NearbyGyms" component={NearbyGymsScreen} />
-    <Tab.Screen
-      name="Logout"
-      component={LoginScreen}
-      listeners={({ navigation }) => ({
-        tabPress: (e) => {
-          // Prevent default action of navigating to the tab
-          e.preventDefault();
-          // Navigate to the Login screen or perform logout action
-          navigation.navigate('Login');
-          // You can add your logout logic here
-        },
-      })}
-    />
+    <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Home' }} />
+    <Tab.Screen name="WorkoutTracker" component={WorkoutTrackerScreen} options={{ title: 'Tracker' }} />
+    <Tab.Screen name="WorkoutLog" component={WorkoutLogScreen} options={{ title: 'Log' }} />
+    <Tab.Screen name="NearbyGyms" component={NearbyGymsScreen} options={{ title: 'Gyms' }} />
+    <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
   </Tab.Navigator>
 );
 
