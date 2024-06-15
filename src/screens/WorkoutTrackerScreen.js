@@ -22,12 +22,19 @@ const WorkoutTrackerScreen = ({ navigation }) => {
   const saveWorkout = async () => {
     if (exercises.length > 0) {
       try {
+        // Get the current date
+        const today = new Date().toISOString().slice(0, 10);
+
         // Get the existing workout log from storage
         const existingWorkouts = await AsyncStorage.getItem('@workout_log');
         const workouts = existingWorkouts ? JSON.parse(existingWorkouts) : [];
 
-        // Add the new workout
-        workouts.push(exercises);
+        // Add the new workout with the date
+        const newWorkout = exercises.map((exercise) => ({
+          ...exercise,
+          date: today,
+        }));
+        workouts.push(newWorkout);
 
         // Save the updated workout log
         await AsyncStorage.setItem('@workout_log', JSON.stringify(workouts));
