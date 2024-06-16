@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
 
 const SettingsScreen = ({ navigation }) => {
   const handleLogout = () => {
@@ -28,11 +30,32 @@ const SettingsScreen = ({ navigation }) => {
     );
   };
 
+  const handleClearAsyncStorage = async () => {
+    try {
+      // Check if the storage directory exists
+      const directoryInfo = await FileSystem.getInfoAsync(FileSystem.documentDirectory + 'RCTAsyncLocalStorage');
+      if (!directoryInfo.exists) {
+        Alert.alert('Error', 'Async Storage directory not found');
+        return;
+      }
+  
+      // Clear the async storage if the directory exists
+      await AsyncStorage.clear();
+      Alert.alert('Success', 'Async Storage Cleared Successfully');
+    } catch (error) {
+      console.error('Error clearing async storage:', error);
+      Alert.alert('Error', 'Failed to clear async storage');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.contentContainer} />
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutButtonText}>Log Out</Text>
+      <TouchableOpacity style={styles.button} onPress={handleClearAsyncStorage}>
+        <Text style={styles.buttonText}>Clear Async Storage</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={handleLogout}>
+        <Text style={styles.buttonText}>Log Out</Text>
       </TouchableOpacity>
     </View>
   );
@@ -47,17 +70,16 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
   },
-  logoutButton: {
-    backgroundColor: 'transparent',
+  button: {
+    backgroundColor: '#007AFF', // Use a color for the button
     paddingVertical: 16,
     alignItems: 'center',
     width: '100%',
     marginBottom: 8,
-    borderWidth: 1, // Add border width
-    borderColor: '#FF3B30', // Set border color to Strava red
+    borderRadius: 8, // Add border radius for a rounded button
   },
-  logoutButtonText: {
-    color: '#FF3B30', // Use the Strava red color
+  buttonText: {
+    color: '#fff', // Use a contrasting color for the text
     fontWeight: 'bold',
     fontSize: 16,
   },

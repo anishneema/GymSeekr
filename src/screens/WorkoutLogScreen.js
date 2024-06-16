@@ -5,7 +5,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const WorkoutLogScreen = ({ navigation }) => {
   const [workoutLog, setWorkoutLog] = useState([]);
   const [searchText, setSearchText] = useState('');
-  const [searchType, setSearchType] = useState('date'); // Default search type
 
   useEffect(() => {
     const loadWorkoutLog = async () => {
@@ -26,74 +25,64 @@ const WorkoutLogScreen = ({ navigation }) => {
     return unsubscribe;
   }, [navigation]);
 
-  const renderExercise = ({ item, index }) => (
+  const formatDate = (dateString) => {
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  const renderExercise = ({ item }) => (
     <View style={styles.exerciseContainer}>
-      <Text style={styles.exerciseText}>{item.exercise}</Text>
+      <Text style={styles.exerciseText}>{item.name}</Text>
       <Text style={styles.detailsText}>
         Sets: {item.sets} Reps: {item.reps} Weight: {item.weight} lbs
       </Text>
-      {item.date && <Text style={styles.dateText}>Date: {item.date}</Text>}
     </View>
   );
 
   const renderWorkout = ({ item }) => (
-    <View>
-      {Array.isArray(item) ? (
-        item.map((exercise, index) => (
-          <React.Fragment key={index}>
-            {renderExercise({ item: exercise, index })}
-          </React.Fragment>
-        ))
-      ) : (
-        <Text>Invalid workout data</Text>
+    <View style={styles.workoutContainer}>
+      <Text style={styles.dateText}>{formatDate(item.date)}</Text>
+      {item.exercises && (
+        <View style={styles.exerciseBox}>
+          {item.exercises.map((exercise, index) => (
+            <React.Fragment key={index}>
+              {renderExercise({ item: exercise })}
+            </React.Fragment>
+          ))}
+        </View>
       )}
     </View>
   );
 
-  const handleSearch = (text, type) => {
-    setSearchText(text);
-    setSearchType(type);
-  };
-
-  const filteredLog = workoutLog.filter((workout) =>
-    Array.isArray(workout)
-      ? workout.some((exercise) =>
-          exercise[searchType]?.toLowerCase().includes(searchText.toLowerCase())
-        )
-      : false
-  );
+  const filteredLog = workoutLog.filter((workout) => {
+    const formattedDate = formatDate(workout.date).toLowerCase();
+    const searchTextLower = searchText ? searchText.toLowerCase() : '';
+  
+    return (
+      formattedDate.includes(searchTextLower) ||
+      (workout.exercises &&
+        workout.exercises.some((exercise) => {
+          const exerciseName = exercise.name ? exercise.name.toLowerCase() : '';
+          const weight = exercise.weight ? exercise.weight.toString().toLowerCase() : '';
+  
+          return (
+            exerciseName.includes(searchTextLower) ||
+            weight.includes(searchTextLower)
+          );
+        }))
+    );
+  });
+  
 
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Workout Log</Text>
-      <View style={styles.searchBar}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder={`Search by ${searchType}`}
-          value={searchText}
-          onChangeText={(text) => handleSearch(text, searchType)}
-        />
-        <View style={styles.searchButtons}>
-          <TouchableOpacity
-            style={searchType === 'date' ? styles.activeButton : styles.inactiveButton}
-            onPress={() => setSearchType('date')}
-          >
-            <Text>Date</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={searchType === 'exercise' ? styles.activeButton : styles.inactiveButton}
-            onPress={() => setSearchType('exercise')}
-          >
-            <Text>Exercise</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={searchType === 'weight' ? styles.activeButton : styles.inactiveButton}
-            onPress={() => setSearchType('weight')}
-          >
-            <Text>Weight</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search by Date, Exercise, or Weight"
+        value={searchText}
+        onChangeText={setSearchText}
+      />
       <FlatList
         data={filteredLog}
         renderItem={renderWorkout}
@@ -110,28 +99,36 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   heading: {
-    fontSize: 24,
+    fontSize: 20, // Decreased from 24
     fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  workoutContainer: {
     marginBottom: 16,
   },
   exerciseContainer: {
     backgroundColor: '#f2f2f2',
-    padding: 16,
+    padding: 12, // Decreased from 16
     borderRadius: 4,
     marginBottom: 8,
   },
   exerciseText: {
-    fontSize: 18,
+    fontSize: 16, // Decreased from 18
     fontWeight: 'bold',
   },
   detailsText: {
-    fontSize: 16,
+    fontSize: 14, // Decreased from 16
     color: '#666',
   },
   dateText: {
-    fontSize: 20,
+    fontSize: 18, // Decreased from 20
     fontWeight: 'bold',
     marginBottom: 8,
+  },
+  exerciseBox: {
+    backgroundColor: '#e6e6e6',
+    padding: 12, // Decreased from 16
+    borderRadius: 8,
   },
   exerciseList: {
     paddingBottom: 16,
@@ -142,31 +139,7 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     padding: 8,
     marginBottom: 16,
-    flex: 1,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  searchButtons: {
-    flexDirection: 'row',
-    marginLeft: 8,
-  },
-  activeButton: {
-    backgroundColor: '#ccc',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  inactiveButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
-    marginRight: 8,
   },
 });
 
 export default WorkoutLogScreen;
-
