@@ -38,7 +38,7 @@ const LoginScreen = ({ navigation }) => {
         onChangeText={setPassword}
         secureTextEntry
       />
-      <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+      <TouchableOpacity onPress={() => navigation.navigate('ForgotScreen')}>
         <Text style={styles.link}>Forgot password?</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
@@ -47,6 +47,7 @@ const LoginScreen = ({ navigation }) => {
       <View style={styles.registerContainer}>
         <Text style={styles.registerText}>New to GymSeekr?</Text>
         <TouchableOpacity onPress={() => navigation.navigate('Registration')}>
+          
           <Text style={styles.registerLink}>Create an account</Text>
         </TouchableOpacity>
       </View>

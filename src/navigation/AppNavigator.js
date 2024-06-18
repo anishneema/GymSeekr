@@ -5,10 +5,14 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../screens/HomeScreen';
 import LoginScreen from '../screens/LoginScreen';
+import RegistrationScreen from '../screens/RegistrationScreen';
+import ForgotScreen from '../screens/ForgotScreen';
 import WorkoutTrackerScreen from '../screens/WorkoutTrackerScreen';
 import WorkoutLogScreen from '../screens/WorkoutLogScreen';
 import NearbyGymsScreen from '../screens/NearbyGymsScreen';
-import SettingsScreen from '../screens/SettingsScreen'; // Import the SettingsScreen component
+import SettingsScreen from '../screens/SettingsScreen';
+import VerificationScreen from '../screens/VerificationScreen';
+import ResetScreen from '../screens/ResetScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -43,7 +47,11 @@ const MainNavigator = () => (
 
 const AuthNavigator = () => (
   <Stack.Navigator>
-    <Stack.Screen name="Login" component={LoginScreen} />
+    <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }}/>
+    <Stack.Screen name="Registration" component={RegistrationScreen} options={{ headerShown: false }}/>
+    <Stack.Screen name="ForgotScreen" component={ForgotScreen} options={{ headerShown: false }}/>
+    <Stack.Screen name="VerificationCode" component={VerificationScreen} options={{ headerShown: false }} />
+    <Stack.Screen name="ResetPassword" component={ResetScreen} options={{ headerShown: false }} />
     <Stack.Screen name="Main" component={MainNavigator} options={{ headerShown: false }} />
   </Stack.Navigator>
 );
