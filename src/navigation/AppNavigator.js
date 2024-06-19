@@ -50,8 +50,8 @@ const AuthNavigator = () => (
     <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }}/>
     <Stack.Screen name="Registration" component={RegistrationScreen} options={{ headerShown: false }}/>
     <Stack.Screen name="ForgotScreen" component={ForgotScreen} options={{ headerShown: false }}/>
-    <Stack.Screen name="VerificationCode" component={VerificationScreen} options={{ headerShown: false }} />
-    <Stack.Screen name="ResetPassword" component={ResetScreen} options={{ headerShown: false }} />
+    <Stack.Screen name="Verification" component={VerificationScreen} options={{ headerShown: false }} />
+    <Stack.Screen name="Reset" component={ResetScreen} options={{ headerShown: false }} />
     <Stack.Screen name="Main" component={MainNavigator} options={{ headerShown: false }} />
   </Stack.Navigator>
 );

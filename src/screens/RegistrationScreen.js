@@ -1,13 +1,69 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { signUp } from 'aws-amplify/auth';
+
+async function handleSignUp({email, password }) {
+  const [isSignUpComplete, setIsSignUpComplete] = useState('');
+  const [userId, setUserId] = useState('');
+  const [nextStep, setNextStep] = useState('');
+  try {
+    const { isSignUpComplete, userId, nextStep } = await signUp({
+      username:email,
+      password,
+      options: {
+        userAttributes: {
+          email
+         // phone_number // E.164 number convention
+        },
+        // optional
+        autoSignIn: false // or SignInOptions e.g { authFlowType: "USER_SRP_AUTH" }
+      }
+    });
+
+    console.log(userId);
+    
+  } catch (error) {
+    console.log('error signing up:', error);
+  }
+   return isSignUpComplete, userId, nextStep;
+}
 
 const RegistrationScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSignUpComplete, setIsSignUpComplete] = useState(false);
+  const [userId, setUserId] = useState('');
+  const [nextStep, setNextStep] = useState('');
 
-  const handleRegistration = () => {
+  const handleSignUp = async () => {
+    try {
+      const result = await signUp({
+        username: email, // Use the email as the username
+        password,
+        options: {
+          userAttributes: {
+            email,
+            'preferred_username': username // Add the preferred_username attribute
+            // phone_number // E.164 number convention
+          },
+          // optional
+          autoSignIn: false // or SignInOptions e.g { authFlowType: "USER_SRP_AUTH" }
+        }
+      });
+  
+      setIsSignUpComplete(result.isSignUpComplete);
+      setUserId(result.userId);
+      setNextStep(result.nextStep);
+  
+      console.log(userId);
+    } catch (error) {
+      console.log('error signing up:', error);
+    }
+  };
+
+  const handleRegistration = async () => {
     // Check if all fields are filled
     if (!email || !username || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
@@ -34,9 +90,18 @@ const RegistrationScreen = ({ navigation }) => {
     }
 
     // Perform registration logic here (e.g., API call to create a new user)
-    // For simplicity, we'll just navigate to the login screen
-    navigation.navigate('Login');
+    await handleSignUp();
+    console.log(isSignUpComplete);
+    console.log(nextStep);
+    console.log(userId);
+    if(!isSignUpComplete){
+      navigation.navigate('Verification', {username, email });
+    }else{
+    // Navigate to the login screen after successful sign-up
+      navigation.navigate('Login');
+    }
   };
+
 
   return (
     <View style={styles.container}>

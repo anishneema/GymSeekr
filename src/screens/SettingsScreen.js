@@ -2,6 +2,15 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
+import { signOut } from 'aws-amplify/auth';
+
+async function handleSignOut() {
+  try {
+    await signOut();
+  } catch (error) {
+    console.log('error signing out: ', error);
+  }
+}
 
 const SettingsScreen = ({ navigation }) => {
   const handleLogout = () => {
@@ -18,6 +27,7 @@ const SettingsScreen = ({ navigation }) => {
           onPress: () => {
             // Simulate logout logic
             // Navigate to the Login screen
+            signOut();
             navigation.reset({
               index: 0,
               routes: [{ name: 'Login' }],

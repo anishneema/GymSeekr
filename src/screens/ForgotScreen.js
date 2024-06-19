@@ -1,31 +1,51 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { resetPassword } from 'aws-amplify/auth';
+import { confirmResetPassword } from 'aws-amplify/auth'
+import { updatePassword } from 'aws-amplify/auth';
+
+
 
 const ForgotScreen = ({ navigation }) => {
-  const [username, setUsername] = useState('');
+  
   const [email, setEmail] = useState('');
 
-  const handleSendCode = () => {
+  const handleSendCode = async () => {
+
     // Check if username and email are provided
-    if (!username || !email) {
-      Alert.alert('Error', 'Please enter both username and email');
-      return;
+    if ( !email) {
+      Alert.alert('Error', 'Please enter valid email');
+    }else{
+      try {
+        const output = await resetPassword({ username:email });
+        handleResetPasswordNextSteps(output);
+      } catch (error) {
+        console.log(error);
+      }
     }
-
-    // Perform code sending logic here (e.g., API call to send verification code)
-    // For simplicity, we'll just navigate to the verification code screen
-    navigation.navigate('VerificationCode', { username, email });
   };
-
+  
+  function handleResetPasswordNextSteps(output) {
+    const { nextStep } = output;
+    switch (nextStep.resetPasswordStep) {
+      case 'CONFIRM_RESET_PASSWORD_WITH_CODE':
+        const codeDeliveryDetails = nextStep.codeDeliveryDetails;
+        console.log(
+          `Confirmation code was sent to ${codeDeliveryDetails.deliveryMedium}`
+        );
+        // Collect the confirmation code from the user and pass to confirmResetPassword.
+        Alert.alert(`Confirmation code was sent to ${codeDeliveryDetails.deliveryMedium}`);
+        navigation.navigate('Reset', {username: email, email});
+        break;
+      case 'DONE':
+        console.log('Successfully reset password.');
+        break;
+    }
+  }
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Forgot Password</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Username"
-        value={username}
-        onChangeText={setUsername}
-      />
+      
       <TextInput
         style={styles.input}
         placeholder="Email address"

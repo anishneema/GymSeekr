@@ -1,21 +1,24 @@
+
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { confirmSignUp } from 'aws-amplify/auth';
 
-const VerificationCodeScreen = ({ navigation, route }) => {
+const VerificationScreen = ({ route, navigation }) => {
   const { username, email } = route.params;
   const [verificationCode, setVerificationCode] = useState('');
 
-  const handleVerifyCode = () => {
-    // Check if verification code is provided
-    if (!verificationCode) {
-      Alert.alert('Error', 'Please enter the verification code');
-      return;
+  async function handleSignUpConfirmation() {
+    try {
+      const { isSignUpComplete, nextStep } = await confirmSignUp({
+        username:email,
+        confirmationCode:verificationCode
+      });
+      Alert.alert('Success', 'Sign-up confirmed. Please sign in.');
+      navigation.navigate('Login');
+    } catch (error) {
+      console.log('error confirming sign up', error);
     }
-
-    // Perform code verification logic here (e.g., API call to verify the code)
-    // For simplicity, we'll just navigate to the reset password screen
-    navigation.navigate('ResetPassword', { username, email });
-  };
+  }
 
   return (
     <View style={styles.container}>
@@ -27,7 +30,7 @@ const VerificationCodeScreen = ({ navigation, route }) => {
         onChangeText={setVerificationCode}
         keyboardType="numeric"
       />
-      <TouchableOpacity style={styles.button} onPress={handleVerifyCode}>
+      <TouchableOpacity style={styles.button} onPress={handleSignUpConfirmation}>
         <Text style={styles.buttonText}>Verify Code</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate('ForgotScreen')}>
@@ -80,4 +83,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default VerificationCodeScreen;
+export default VerificationScreen; 

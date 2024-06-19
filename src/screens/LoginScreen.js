@@ -1,11 +1,48 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { signIn } from 'aws-amplify/auth';
+import { signOut } from 'aws-amplify/auth';
+
+async function handleSignOut() {
+  try {
+    await signOut();
+  } catch (error) {
+    console.log('error signing out: ', error);
+  }
+}
+
+
+
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
+    try {
+      const { isSignedIn, nextStep } = await signIn({ username: email, password });
+      console.log('isSignedIn:', isSignedIn);
+      console.log('nextStep:', nextStep);
+  
+      if (isSignedIn) {
+        // Reset the navigation stack and navigate to the 'Main' screen
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Main' }],
+        });
+      } else if (nextStep && nextStep.signInStep === 'CONFIRM_SIGN_UP') {
+        // Navigate to the VerificationScreen if the user needs to confirm their sign-up
+        navigation.navigate('Verification', {username:email, email });
+      } else {
+        Alert.alert('Error', 'Invalid email or password');
+      }
+    } catch (error) {
+      Alert.alert('Error signing in', error.message);
+      console.log('error signing in', error);
+    }
+  };
+
+  const handleLogin_1 = () => {
     const validEmail = 'user@example.com';
     const validPassword = 'password';
   
@@ -43,6 +80,9 @@ const LoginScreen = ({ navigation }) => {
       </TouchableOpacity>
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Sign in</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={handleSignOut}>
+        <Text style={styles.buttonText}>AWS Sign out</Text>
       </TouchableOpacity>
       <View style={styles.registerContainer}>
         <Text style={styles.registerText}>New to GymSeekr?</Text>
