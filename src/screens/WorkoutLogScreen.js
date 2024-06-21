@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, Alert, SafeAreaView, StatusBar } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
+
 
 const WorkoutLogScreen = ({ navigation }) => {
   const [workoutLog, setWorkoutLog] = useState([]);
   const [searchText, setSearchText] = useState('');
+
 
   useEffect(() => {
     const loadWorkoutLog = async () => {
@@ -18,17 +21,22 @@ const WorkoutLogScreen = ({ navigation }) => {
       }
     };
 
+
     const unsubscribe = navigation.addListener('focus', () => {
       loadWorkoutLog();
     });
 
+
     return unsubscribe;
   }, [navigation]);
 
+
   const formatDate = (dateString) => {
+    const date = new Date(dateString);
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+    return date.toLocaleDateString(undefined, options);
   };
+
 
   const renderExercise = ({ item }) => (
     <View style={styles.exerciseContainer}>
@@ -39,6 +47,7 @@ const WorkoutLogScreen = ({ navigation }) => {
     </View>
   );
 
+
   const renderWorkout = ({ item, index }) => (
     <View style={styles.workoutContainer}>
       <View style={styles.workoutHeader}>
@@ -47,7 +56,7 @@ const WorkoutLogScreen = ({ navigation }) => {
           style={styles.deleteButton}
           onPress={() => confirmDeleteWorkout(index)}
         >
-          <Text style={styles.deleteButtonText}>X</Text>
+          <Ionicons name="trash-outline" size={24} color="#666" />
         </TouchableOpacity>
       </View>
       {item.exercises && (
@@ -59,6 +68,7 @@ const WorkoutLogScreen = ({ navigation }) => {
       )}
     </View>
   );
+
 
   const confirmDeleteWorkout = (workoutIndex) => {
     Alert.alert(
@@ -79,12 +89,14 @@ const WorkoutLogScreen = ({ navigation }) => {
     );
   };
 
+
   const deleteWorkout = (workoutIndex) => {
     const updatedWorkoutLog = [...workoutLog];
     updatedWorkoutLog.splice(workoutIndex, 1);
     setWorkoutLog(updatedWorkoutLog);
     saveWorkoutLog(updatedWorkoutLog);
   };
+
 
   const saveWorkoutLog = async (updatedLog) => {
     try {
@@ -94,9 +106,11 @@ const WorkoutLogScreen = ({ navigation }) => {
     }
   };
 
+
   const filteredLog = workoutLog.filter((workout) => {
     const formattedDate = formatDate(workout.date).toLowerCase();
     const searchTextLower = searchText ? searchText.toLowerCase() : '';
+
 
     return (
       formattedDate.includes(searchTextLower) ||
@@ -105,45 +119,63 @@ const WorkoutLogScreen = ({ navigation }) => {
           const exerciseName = exercise.name ? exercise.name.toLowerCase() : '';
           const weight = exercise.weight ? exercise.weight.toString().toLowerCase() : '';
 
+
           return exerciseName.includes(searchTextLower) || weight.includes(searchTextLower);
         }))
     );
   });
 
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
       <Text style={styles.heading}>Workout Log</Text>
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search by Date, Exercise, or Weight"
-        value={searchText}
-        onChangeText={setSearchText}
-      />
+      <View style={styles.searchContainer}>
+        <Ionicons name="search-outline" size={24} color="#666" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search by Date, Exercise, or Weight"
+          value={searchText}
+          onChangeText={setSearchText}
+          placeholderTextColor="#666"
+        />
+      </View>
       <FlatList
         data={filteredLog}
         renderItem={renderWorkout}
         keyExtractor={(item, index) => `${item.date}-${index}`}
         contentContainerStyle={styles.exerciseList}
+        showsVerticalScrollIndicator={false}
       />
-    </View>
+    </SafeAreaView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    backgroundColor: '#F5F5F5',
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   heading: {
-    fontSize: 20,
+    fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 16,
+    color: '#333',
+    marginLeft: 8,
   },
   workoutContainer: {
-    marginBottom: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    marginBottom: 12,
     padding: 12,
-    borderRadius: 4,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   workoutHeader: {
     flexDirection: 'row',
@@ -151,47 +183,53 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  dateText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#007AFF',
+  },
+  exerciseBox: {
+    backgroundColor: '#F2F2F2',
+    borderRadius: 8,
+    padding: 10,
+  },
   exerciseContainer: {
-    backgroundColor: '#f2f2f2',
-    padding: 12,
-    borderRadius: 4,
     marginBottom: 8,
   },
   exerciseText: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: '#333',
   },
   detailsText: {
     fontSize: 14,
     color: '#666',
   },
-  dateText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  exerciseBox: {
-    backgroundColor: '#e6e6e6',
-    padding: 12,
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
     borderRadius: 8,
+    paddingHorizontal: 12,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
   },
-  exerciseList: {
-    paddingBottom: 16,
+  searchIcon: {
+    marginRight: 8,
   },
   searchInput: {
+    flex: 1,
     height: 40,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 8,
-    marginBottom: 16,
+    color: '#333',
   },
   deleteButton: {
-    padding: 4,
-  },
-  deleteButtonText: {
-    color: 'grey',
-    fontWeight: 'bold',
-    fontSize: 18,
+    padding: 8,
   },
 });
+
 
 export default WorkoutLogScreen;

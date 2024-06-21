@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Dimensions } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Dimensions, SafeAreaView, StatusBar } from 'react-native';
 import { SwipeListView } from 'react-native-swipe-list-view';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const WorkoutTrackerScreen = ({ navigation }) => {
   const [exercises, setExercises] = useState([]);
@@ -9,6 +10,7 @@ const WorkoutTrackerScreen = ({ navigation }) => {
   const [newSets, setNewSets] = useState('');
   const [newReps, setNewReps] = useState('');
   const [newWeight, setNewWeight] = useState('');
+
 
   const addExercise = () => {
     if (newExercise.trim() !== '') {
@@ -20,19 +22,23 @@ const WorkoutTrackerScreen = ({ navigation }) => {
     }
   };
 
+
   const saveWorkout = async () => {
     if (exercises.length > 0) {
       try {
-        const today = new Date().toISOString().slice(0, 10);
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
         const existingWorkouts = await AsyncStorage.getItem('@workout_log');
         const workoutLogs = existingWorkouts ? JSON.parse(existingWorkouts) : [];
         const newWorkoutLog = { date: today, exercises: exercises };
-  
-        // Prepend the new workout log to the existing logs array
+
+
         workoutLogs.unshift(newWorkoutLog);
-  
+
+
         await AsyncStorage.setItem('@workout_log', JSON.stringify(workoutLogs));
-  
+
+
         setExercises([]);
         navigation.navigate('WorkoutLog');
       } catch (e) {
@@ -40,6 +46,27 @@ const WorkoutTrackerScreen = ({ navigation }) => {
       }
     }
   };
+
+
+  const clearExercises = () => {
+    Alert.alert(
+      'Clear All Exercises',
+      'Are you sure you want to clear all exercises?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Clear All',
+          style: 'destructive',
+          onPress: () => setExercises([]),
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
 
   const confirmDeleteExercise = (rowKey) => {
     Alert.alert(
@@ -60,9 +87,11 @@ const WorkoutTrackerScreen = ({ navigation }) => {
     );
   };
 
+
   const deleteExercise = (rowKey) => {
     setExercises((prevExercises) => prevExercises.filter((exercise) => exercise.key !== rowKey));
   };
+
 
   const renderExercise = (data) => (
     <View style={styles.exerciseContainer}>
@@ -73,6 +102,7 @@ const WorkoutTrackerScreen = ({ navigation }) => {
     </View>
   );
 
+
   const renderHiddenItem = () => (
     <View style={styles.rowBack}>
       <View style={styles.backRightBtn}>
@@ -81,14 +111,17 @@ const WorkoutTrackerScreen = ({ navigation }) => {
     </View>
   );
 
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
       <Text style={styles.heading}>Workout Tracker</Text>
       <TextInput
         style={styles.input}
         placeholder="Exercise"
         value={newExercise}
         onChangeText={setNewExercise}
+        placeholderTextColor="#999"
       />
       <View style={styles.inputRow}>
         <TextInput
@@ -97,6 +130,7 @@ const WorkoutTrackerScreen = ({ navigation }) => {
           value={newSets}
           onChangeText={setNewSets}
           keyboardType="numeric"
+          placeholderTextColor="#999"
         />
         <TextInput
           style={[styles.input, styles.inputSmall]}
@@ -104,6 +138,7 @@ const WorkoutTrackerScreen = ({ navigation }) => {
           value={newReps}
           onChangeText={setNewReps}
           keyboardType="numeric"
+          placeholderTextColor="#999"
         />
         <TextInput
           style={[styles.input, styles.inputSmall]}
@@ -111,12 +146,18 @@ const WorkoutTrackerScreen = ({ navigation }) => {
           value={newWeight}
           onChangeText={setNewWeight}
           keyboardType="numeric"
+          placeholderTextColor="#999"
         />
       </View>
-      <TouchableOpacity style={styles.button} onPress={addExercise}>
-        <Text style={styles.buttonText}>Add Exercise</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={saveWorkout}>
+      <View style={styles.buttonRow}>
+        <TouchableOpacity style={styles.button} onPress={addExercise}>
+          <Text style={styles.buttonText}>Add Exercise</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.button, styles.clearButton]} onPress={clearExercises}>
+          <Text style={[styles.buttonText, styles.clearButtonText]}>Clear All</Text>
+        </TouchableOpacity>
+      </View>
+      <TouchableOpacity style={styles.saveButton} onPress={saveWorkout}>
         <Text style={styles.buttonText}>Save Workout</Text>
       </TouchableOpacity>
       <SwipeListView
@@ -135,86 +176,129 @@ const WorkoutTrackerScreen = ({ navigation }) => {
         previewOpenValue={-40}
         previewOpenDelay={3000}
         useNativeDriver={false}
+        style={styles.swipeListView}
       />
-    </View>
+    </SafeAreaView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    backgroundColor: '#F7F9FC',
+    padding: 20,
   },
   heading: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 16,
+    color: '#333',
+    marginBottom: 20,
+    marginLeft: 5, // Slightly shifted to the right
   },
   input: {
-    height: 40,
+    height: 48,
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 4,
-    paddingHorizontal: 8,
-    marginBottom: 8,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+    fontSize: 16,
+    backgroundColor: '#FFF',
+    color: '#333',
   },
   inputRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 20,
   },
   inputSmall: {
     flex: 1,
     marginHorizontal: 4,
   },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
   button: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 12,
-    borderRadius: 4,
-    marginBottom: 16,
+    flex: 1,
+    backgroundColor: '#3A7CA5', // Muted blue color
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 4,
+  },
+  clearButton: {
+    backgroundColor: '#C74444', // Muted red color
   },
   buttonText: {
-    color: '#fff',
+    color: '#FFF',
     fontWeight: 'bold',
-    textAlign: 'center',
+    fontSize: 16,
+  },
+  clearButtonText: {
+    color: '#FFF',
+  },
+  saveButton: {
+    backgroundColor: '#4CAF50', // Muted green color
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
   exerciseContainer: {
-    backgroundColor: '#f2f2f2',
+    backgroundColor: '#FFF',
     padding: 16,
-    borderRadius: 4,
-    marginBottom: 8,
+    borderRadius: 8,
+    marginBottom: 10,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   exerciseText: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#333',
   },
   detailsText: {
     fontSize: 16,
     color: '#666',
+    marginTop: 4,
   },
   rowBack: {
     alignItems: 'center',
-    backgroundColor: '#FF3B30', // Nicer shade of red
+    backgroundColor: '#C74444', // Muted red color
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginBottom: 8, // Ensures no red line underneath
-    borderRadius: 4,
+    borderRadius: 8,
+    marginBottom: 10,
   },
   backRightBtn: {
     alignItems: 'center',
-    bottom: 0,
     justifyContent: 'center',
     position: 'absolute',
     top: 0,
-    width: Dimensions.get('window').width,
-    backgroundColor: '#FF3B30', // Nicer shade of red
+    bottom: 0,
     right: 0,
-    borderRadius: 4,
+    width: Dimensions.get('window').width,
+    borderRadius: 8,
+    backgroundColor: '#C74444', // Muted red color
   },
   backTextWhite: {
     color: '#FFF',
     fontWeight: 'bold',
+    paddingHorizontal: 20,
+  },
+  swipeListView: {
+    marginTop: 20,
   },
 });
+
 
 export default WorkoutTrackerScreen;

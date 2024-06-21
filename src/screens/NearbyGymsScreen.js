@@ -1,27 +1,70 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, TextInput, Button,Alert } from 'react-native';
+import { GOOGLE_MAPS_API_KEY } from '../../config.js';
+import { PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps';
+import * as Location from 'expo-location';
 
-const HomeScreen = ({ navigation }) => {
-  const handleLogout = () => {
-    // Simulate logout logic
-    // Navigate to the Login screen
-    //I will be changing here
-    navigation.navigate('Login');
+const NearbyGymScreen = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [gyms, setGyms] = useState([]);
+  const [userLocation, setUserLocation] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('Location permission denied');
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      setUserLocation(location.coords);
+    })();
+  }, []);
+
+  const fetchNearbyGyms = async () => {
+    try {
+      const response = await fetch(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=${GOOGLE_MAPS_API_KEY}&location=${userLocation ? `${userLocation.latitude},${userLocation.longitude}` : '37.78825,-122.4324'}&radius=5000&keyword=${searchQuery}`);
+      const data = await response.json();
+      console.log(data.results);
+      
+      setGyms(data.results);
+    } catch (error) {
+      console.error('Error fetching nearby gyms:', error);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.heading}>Made for Gym enthusiasts</Text>
-        <View style={styles.headerContainer}>
-          <Text style={styles.heading}>Welcome to Finding Nearby Gyms</Text>
-          <Text style={styles.appName}>Powerlifting App</Text>
-          <View style={styles.descriptionContainer}>
-            <Text style={styles.descriptionText}>Find nearby gyms,</Text>
-          </View>
-        </View>
-      </View>
+      <TextInput
+        style={styles.input}
+        placeholder="Search for gyms"
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+      />
+      <Button title="Search" onPress={fetchNearbyGyms} />
+      <MapView
+        style={styles.map}
+        provider={PROVIDER_GOOGLE}
+        initialRegion={{
+          latitude: userLocation ? userLocation.latitude : 37.78825,
+          longitude: userLocation ? userLocation.longitude : -122.4324,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        }}
+      >
+        {gyms.map((gym, index) => (
+          <Marker
+            key={index}
+            coordinate={{
+              latitude: gym.geometry.location.lat,
+              longitude: gym.geometry.location.lng,
+            }}
+            title={gym.name}
+          />
+        ))}
+      </MapView>
     </View>
   );
 };
@@ -29,63 +72,18 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
-  content: {
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginHorizontal: 10,
+    marginVertical: 5,
+    paddingHorizontal: 10,
+  },
+  map: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  heading: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  bottomNavigation: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: '#f2f2f2',
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
-  },
-  bottomNavButton: {
-    alignItems: 'center',
-  },
-  bottomNavLabel: {
-    fontSize: 12,
-    color: '#333',
-    marginTop: 4,
-  },
-  headerContainer: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  appName: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#007AFF',
-  },
-  descriptionContainer: {
-    marginTop: 16,
-  },
-  descriptionText: {
-    fontSize: 25,
-    color: '#666',
-    textAlign: 'center',
-  },
-  workoutLogButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 4,
-    marginTop: 16,
-  },
-  workoutLogButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
   },
 });
 
-export default HomeScreen;
+export default NearbyGymScreen;
