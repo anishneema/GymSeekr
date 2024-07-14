@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Modal, ScrollView, SafeAreaView, StatusBar } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,11 +11,25 @@ const HomeScreen = ({ navigation }) => {
   const [workoutLog, setWorkoutLog] = useState([]);
   const [selectedWorkout, setSelectedWorkout] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [userEmail, setUserEmail] = useState(null);
+
+
+  const loadUserEmail = async () => {
+    try {
+      const email = await AsyncStorage.getItem('userEmail');
+      if (email) {
+        setUserEmail(email);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
 
   const loadWorkoutLog = async () => {
+    if (!userEmail) return;
     try {
-      const savedWorkoutLog = await AsyncStorage.getItem('@workout_log');
+      const savedWorkoutLog = await AsyncStorage.getItem(`@workout_log_${userEmail}`);
       if (savedWorkoutLog !== null) {
         const parsedLog = JSON.parse(savedWorkoutLog);
         setWorkoutLog(parsedLog);
@@ -28,9 +42,10 @@ const HomeScreen = ({ navigation }) => {
 
 
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
+      loadUserEmail();
       loadWorkoutLog();
-    }, [])
+    }, [userEmail])
   );
 
 
@@ -230,28 +245,22 @@ const styles = StyleSheet.create({
     color: '#007AFF',
   },
   closeButton: {
-    padding: 4,
+    padding: 8,
   },
   scrollContainer: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 20,
   },
   workoutContainer: {
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    marginBottom: 20,
   },
   exerciseContainer: {
-    backgroundColor: '#F0F0F0',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
+    padding: 10,
+    borderRadius: 6,
+    backgroundColor: '#F7F9FC',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    marginBottom: 10,
   },
   exerciseText: {
     fontSize: 18,
@@ -271,7 +280,7 @@ const styles = StyleSheet.create({
   },
   exerciseBox: {
     backgroundColor: '#FFFFFF',
-  },  
+  },
 });
 
 

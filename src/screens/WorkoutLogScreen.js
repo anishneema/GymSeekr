@@ -7,14 +7,16 @@ import { Ionicons } from '@expo/vector-icons';
 const WorkoutLogScreen = ({ navigation }) => {
   const [workoutLog, setWorkoutLog] = useState([]);
   const [searchText, setSearchText] = useState('');
+  const [userEmail, setUserEmail] = useState(null);
 
 
   useEffect(() => {
-    const loadWorkoutLog = async () => {
+    const loadUserEmailAndLog = async () => {
       try {
-        const savedWorkoutLog = await AsyncStorage.getItem('@workout_log');
-        if (savedWorkoutLog !== null) {
-          setWorkoutLog(JSON.parse(savedWorkoutLog));
+        const email = await AsyncStorage.getItem('userEmail');
+        if (email) {
+          setUserEmail(email);
+          loadWorkoutLog(email);
         }
       } catch (e) {
         console.error(e);
@@ -23,12 +25,25 @@ const WorkoutLogScreen = ({ navigation }) => {
 
 
     const unsubscribe = navigation.addListener('focus', () => {
-      loadWorkoutLog();
+      loadUserEmailAndLog();
     });
 
 
     return unsubscribe;
   }, [navigation]);
+
+
+  const loadWorkoutLog = async (email) => {
+    try {
+      const workoutLogKey = `@workout_log_${email}`;
+      const savedWorkoutLog = await AsyncStorage.getItem(workoutLogKey);
+      if (savedWorkoutLog !== null) {
+        setWorkoutLog(JSON.parse(savedWorkoutLog));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
 
   const formatDate = (dateString) => {
@@ -100,7 +115,8 @@ const WorkoutLogScreen = ({ navigation }) => {
 
   const saveWorkoutLog = async (updatedLog) => {
     try {
-      await AsyncStorage.setItem('@workout_log', JSON.stringify(updatedLog));
+      const workoutLogKey = `@workout_log_${userEmail}`;
+      await AsyncStorage.setItem(workoutLogKey, JSON.stringify(updatedLog));
     } catch (e) {
       console.error(e);
     }
