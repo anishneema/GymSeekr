@@ -1,7 +1,20 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { signIn, signOut } from 'aws-amplify/auth';
+import { signIn} from 'aws-amplify/auth';
+import { signOut} from 'aws-amplify/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+
+async function handleSignOut() {
+  try {
+    await signOut();
+  } catch (error) {
+    console.log('error signing out: ', error);
+  }
+}
+
+
+
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -9,17 +22,6 @@ const LoginScreen = ({ navigation }) => {
 
   const handleLogin = async () => {
     try {
-
-      // Check for hardcoded credentials, above
-    if (email === 'hi' && password === 'hi') {
-      await AsyncStorage.setItem('userEmail', email);
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Main' }],
-      });
-      return;
-    }
-// below
       const { isSignedIn, nextStep } = await signIn({ username: email, password });
       
       if (isSignedIn) {
@@ -27,30 +29,32 @@ const LoginScreen = ({ navigation }) => {
         await AsyncStorage.setItem('userEmail', email);
 
         // Reset the navigation stack and navigate to the 'Main' screen
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Main' }],
-        });
+        navigateToMain();
+        AsyncStorage.setItem('userEmail',email);
       } else if (nextStep && nextStep.signInStep === 'CONFIRM_SIGN_UP') {
-        navigation.navigate('Verification', { username: email, email });
+        // Navigate to the VerificationScreen if the user needs to confirm their sign-up
+        navigation.navigate('Verification', {username:email, email });
+        AsyncStorage.setItem('userEmail',email);
       } else {
         Alert.alert('Error', 'Invalid email or password');
       }
     } catch (error) {
-      Alert.alert('Error signing in', error.message);
-      console.log('error signing in', error);
-    }
+        if( error.name === 'UserAlreadyAuthenticatedException'){
+          navigateToMain();
+          AsyncStorage.setItem('userEmail',email);
+        }else{
+          Alert.alert('Error signing in', error.message);
+          console.log('error signing in', error);
+        }
+    } 
   };
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      await AsyncStorage.removeItem('userEmail');
-      navigation.navigate('Login');
-    } catch (error) {
-      console.log('error signing out: ', error);
-    }
-  };
+  function navigateToMain(){
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Main' }],
+    });
+  }
 
   return (
     <View style={styles.container}>
@@ -75,9 +79,7 @@ const LoginScreen = ({ navigation }) => {
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Sign in</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={handleSignOut}>
-        <Text style={styles.buttonText}>Sign out</Text>
-      </TouchableOpacity>
+   
       <View style={styles.registerContainer}>
         <Text style={styles.registerText}>New to GymSeekr?</Text>
         <TouchableOpacity onPress={() => navigation.navigate('Registration')}>

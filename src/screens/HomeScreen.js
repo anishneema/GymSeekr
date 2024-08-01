@@ -4,7 +4,10 @@ import { Calendar } from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { listWorkouts } from '../graphql/queries';
+import { generateClient } from "aws-amplify/api";
 
+const API = generateClient();
 const colors = {
   primary: '#026bd9', // Steel Blue
   secondary: '#4A90E2', // Dodger Blue (used sparingly for emphasis)
@@ -30,35 +33,50 @@ const HomeScreen = ({ navigation }) => {
   const [showModal, setShowModal] = useState(false);
   const [userEmail, setUserEmail] = useState(null);
   const [quoteIndex, setQuoteIndex] = useState(0);
-
-  const loadUserEmail = async () => {
-    try {
-      const email = await AsyncStorage.getItem('userEmail');
-      if (email) {
-        setUserEmail(email);
+  useEffect(() => {
+    const loadUserEmail = async () => {
+      try {
+        const email = await AsyncStorage.getItem('userEmail');
+        if (email) {
+          setUserEmail(email);
+        }
+      } catch (e) {
+        console.error('Error loading user email:', e);
       }
-    } catch (e) {
-      console.error(e);
+    };
+
+    loadUserEmail();
+  }, []);
+
+  useEffect(() => {
+    if (userEmail) {
+      loadWorkoutLog();
     }
-  };
+  }, [userEmail]);
 
   const loadWorkoutLog = async () => {
     if (!userEmail) return;
     try {
-      const savedWorkoutLog = await AsyncStorage.getItem(`@workout_log_${userEmail}`);
-      if (savedWorkoutLog !== null) {
-        const parsedLog = JSON.parse(savedWorkoutLog);
-        setWorkoutLog(parsedLog);
-        updateMarkedDates(parsedLog);
-      }
+      const filter = {
+        owner: { eq: userEmail }
+      };
+
+      const result = await API.graphql({
+        query: listWorkouts,
+        variables: { filter }
+      });
+
+      const workouts = result?.data?.listWorkouts?.items.filter(workout => !workout._deleted) || [];
+      console.log('Fetched workouts:', workouts);
+      setWorkoutLog(workouts);
+      updateMarkedDates(workouts);
     } catch (e) {
-      console.error(e);
+      console.error('Error loading workout log:', e);
     }
   };
 
   useFocusEffect(
     useCallback(() => {
-      loadUserEmail();
       loadWorkoutLog();
       setQuoteIndex(Math.floor(Math.random() * quotes.length));
     }, [userEmail])
@@ -84,6 +102,7 @@ const HomeScreen = ({ navigation }) => {
         workoutDate.getDate() === date.day
       );
     });
+    console.log('Workouts for selected date:', workoutsForSelectedDate);
     if (workoutsForSelectedDate.length > 0) {
       setSelectedWorkout(workoutsForSelectedDate);
       setShowModal(true);
@@ -212,12 +231,14 @@ const HomeScreen = ({ navigation }) => {
                   </View>
                   {workout.exercises && (
                     <View style={styles.exerciseBox}>
-                      {workout.exercises.map((exercise, index) => (
-                        <React.Fragment key={index}>
+                      {workout.exercises.items.map((exercise, exerciseIndex) => (
+                        <React.Fragment key={exerciseIndex}>
                           {renderExercise({ item: exercise })}
                         </React.Fragment>
                       ))}
                     </View>
+                  ) : (
+                    <Text style={styles.noExercisesText}>No exercises recorded.</Text>
                   )}
                 </View>
               ))}
@@ -367,6 +388,11 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   exerciseContainer: {
+    padding: 10,
+    borderRadius: 6,
+    backgroundColor: '#F7F9FC',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
     marginBottom: 10,
   },
   exerciseText: {
@@ -378,8 +404,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.mediumGrey,
   },
-  shareButton: {
-    padding: 8,
+  exerciseBox: {
+    backgroundColor: '#FFFFFF',
+  },
+  noExercisesText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 8,
   },
 });
 

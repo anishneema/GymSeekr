@@ -9,6 +9,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@aws-amplify/api-graphql": "^4.1.11",
     "@aws-amplify/react-native": "^1.1.1",
     "@aws-amplify/ui-react-native": "^2.2.2",
     "@expo/vector-icons": "^14.0.0",
@@ -19,7 +20,7 @@
     "@react-navigation/bottom-tabs": "^6.5.20",
     "@react-navigation/native": "^6.1.17",
     "@react-navigation/stack": "^6.3.29",
-    "aws-amplify": "^6.3.6",
+    "aws-amplify": "^6.4.3",
     "expo": "~51.0.14",
     "expo-dev-client": "~4.0.18",
     "expo-file-system": "^17.0.1",

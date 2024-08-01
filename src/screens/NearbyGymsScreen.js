@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TextInput, TouchableOpacity, Alert, Text, SafeAreaView, StatusBar, Animated } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useNavigation } from '@react-navigation/native';
-import { gymData } from './Database'; // Ensure this is correctly imported and populated
 import { Ionicons } from '@expo/vector-icons';
-import { debounce } from 'lodash';
 import { GOOGLE_MAPS_API_KEY } from '../../config.js';
+import { gymData } from './Database';
 
 const NearbyGymScreen = () => {
   const [gymSearchQuery, setGymSearchQuery] = useState('');
@@ -21,7 +20,6 @@ const NearbyGymScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation();
   const fadeAnim = new Animated.Value(0);
-  const mapRef = useRef(null); // Reference to the MapView
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -30,24 +28,6 @@ const NearbyGymScreen = () => {
       useNativeDriver: true,
     }).start();
   }, []);
-
-  useEffect(() => {
-    // Adjust the map region to include all markers
-    if (filteredGyms.length > 0) {
-      mapRef.current.fitToCoordinates(
-        filteredGyms
-          .filter(gym => gym.location && gym.location.lat && gym.location.lng) // Ensure valid coordinates
-          .map(gym => ({
-            latitude: gym.location.lat,
-            longitude: gym.location.lng,
-          })),
-        {
-          edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
-          animated: true,
-        }
-      );
-    }
-  }, [filteredGyms]);
 
   const handleRegionChange = (region) => {
     setMapRegion(region);
@@ -58,45 +38,12 @@ const NearbyGymScreen = () => {
     try {
       const centerLocation = `${mapRegion.latitude},${mapRegion.longitude}`;
       const searchKeyword = gymSearchQuery.trim() || 'gym';
-      
-      // Filter local gymData first
-      let localGyms = gymData.filter(gym =>
-        gym.name.toLowerCase().includes(searchKeyword.toLowerCase()) &&
-        gym.equipment.some(eq =>
-          eq.toLowerCase().includes(equipmentSearchQuery.toLowerCase())
-        )
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=${GOOGLE_MAPS_API_KEY}&location=${centerLocation}&radius=7000&keyword=${searchKeyword}`
       );
-
-      // If local gyms are fewer than 7, fetch from Google Maps
-      if (localGyms.length < 7) {
-        const response = await fetch(
-          `https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=${GOOGLE_MAPS_API_KEY}&location=${centerLocation}&radius=50000&keyword=${searchKeyword}&rankby=prominence`
-        );
-        const data = await response.json();
-
-        const additionalGyms = data.results.filter(gym => 
-          !localGyms.some(localGym => localGym.name === gym.name)
-        ).slice(0, 7 - localGyms.length); // Limit results to fill up to 7 gyms
-
-        // Map additional gyms to match local gymData structure
-        const mappedAdditionalGyms = additionalGyms.map(gym => ({
-          id: gym.place_id,
-          name: gym.name,
-          address: gym.vicinity,
-          equipment: ['Information not available'],
-          hours: 'Information not available',
-          description: 'No additional information available.',
-          location: {
-            lat: gym.geometry?.location?.lat || 0,
-            lng: gym.geometry?.location?.lng || 0,
-          }
-        }));
-
-        localGyms = [...localGyms, ...mappedAdditionalGyms];
-      }
-
-      setGyms(localGyms);
-      setFilteredGyms(localGyms);
+      const data = await response.json();
+      setGyms(data.results);
+      setFilteredGyms(data.results);
     } catch (error) {
       console.error('Error fetching nearby gyms:', error);
       Alert.alert('Error', 'Failed to fetch nearby gyms. Please try again.');
@@ -107,9 +54,9 @@ const NearbyGymScreen = () => {
 
   const handleMarkerPress = (gym) => {
     const gymDetails = gymData.find(g => g.name === gym.name) || {
-      id: gym.id,
+      id: gym.place_id,
       name: gym.name,
-      address: gym.address,
+      address: gym.vicinity,
       equipment: ['Information not available'],
       hours: 'Information not available',
       description: 'No additional information available.',
@@ -117,7 +64,7 @@ const NearbyGymScreen = () => {
     navigation.navigate('GymDetails', { gym: gymDetails });
   };
 
-  const handleSearch = debounce(() => {
+  const handleSearch = () => {
     if (gymSearchQuery.trim() === '' && equipmentSearchQuery.trim() === '') {
       setGyms([]);
       setFilteredGyms([]);
@@ -136,11 +83,11 @@ const NearbyGymScreen = () => {
           return gymDetails ? gymDetails.equipment.some(eq =>
             eq.toLowerCase().includes(equipmentSearchQuery.toLowerCase())
           ) : false;
-        }).slice(0, 7); // Limit filtered results to 7 gyms
+        });
         setFilteredGyms(filtered);
       }
     });
-  }, 500); // 500 milliseconds delay
+  };
 
   return (
     <SafeAreaView style={styles.container}>

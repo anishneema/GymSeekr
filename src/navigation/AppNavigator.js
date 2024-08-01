@@ -13,7 +13,8 @@ import NearbyGymsScreen from '../screens/NearbyGymsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import VerificationScreen from '../screens/VerificationScreen';
 import ResetScreen from '../screens/ResetScreen';
-import GymDetailsScreen from '../screens/GymDetailsScreen'; 
+import GymDetailsScreen from '../screens/GymDetailsScreen'; // Add this import
+
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
