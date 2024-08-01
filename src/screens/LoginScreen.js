@@ -1,18 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { signIn } from 'aws-amplify/auth';
-import { signOut } from 'aws-amplify/auth';
-
-async function handleSignOut() {
-  try {
-    await signOut();
-  } catch (error) {
-    console.log('error signing out: ', error);
-  }
-}
-
-
-
+import { signIn, signOut } from 'aws-amplify/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -20,19 +9,30 @@ const LoginScreen = ({ navigation }) => {
 
   const handleLogin = async () => {
     try {
+
+      // Check for hardcoded credentials, above
+    if (email === 'hi' && password === 'hi') {
+      await AsyncStorage.setItem('userEmail', email);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Main' }],
+      });
+      return;
+    }
+// below
       const { isSignedIn, nextStep } = await signIn({ username: email, password });
-      console.log('isSignedIn:', isSignedIn);
-      console.log('nextStep:', nextStep);
-  
+      
       if (isSignedIn) {
+        // Store the email as a simple identifier (not secure, just for demonstration)
+        await AsyncStorage.setItem('userEmail', email);
+
         // Reset the navigation stack and navigate to the 'Main' screen
         navigation.reset({
           index: 0,
           routes: [{ name: 'Main' }],
         });
       } else if (nextStep && nextStep.signInStep === 'CONFIRM_SIGN_UP') {
-        // Navigate to the VerificationScreen if the user needs to confirm their sign-up
-        navigation.navigate('Verification', {username:email, email });
+        navigation.navigate('Verification', { username: email, email });
       } else {
         Alert.alert('Error', 'Invalid email or password');
       }
@@ -42,24 +42,18 @@ const LoginScreen = ({ navigation }) => {
     }
   };
 
-  const handleLogin_1 = () => {
-    const validEmail = 'user@example.com';
-    const validPassword = 'password';
-  
-    if (email === validEmail && password === validPassword) {
-      // Reset the navigation stack and navigate to the 'Main' screen
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Main' }],
-      });
-    } else {
-      Alert.alert('Error', 'Invalid email or password');
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      await AsyncStorage.removeItem('userEmail');
+      navigation.navigate('Login');
+    } catch (error) {
+      console.log('error signing out: ', error);
     }
   };
 
   return (
     <View style={styles.container}>
-      {/* <Image source={require('../assets/github-logo.png')} style={styles.logo} /> */}
       <Text style={styles.heading}>Welcome to GymSeekr</Text>
       <TextInput
         style={styles.input}
@@ -82,12 +76,11 @@ const LoginScreen = ({ navigation }) => {
         <Text style={styles.buttonText}>Sign in</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.button} onPress={handleSignOut}>
-        <Text style={styles.buttonText}>AWS Sign out</Text>
+        <Text style={styles.buttonText}>Sign out</Text>
       </TouchableOpacity>
       <View style={styles.registerContainer}>
         <Text style={styles.registerText}>New to GymSeekr?</Text>
         <TouchableOpacity onPress={() => navigation.navigate('Registration')}>
-          
           <Text style={styles.registerLink}>Create an account</Text>
         </TouchableOpacity>
       </View>
@@ -103,11 +96,6 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#f6f8fa',
   },
-  // logo: {
-  //   width: 72,
-  //   height: 72,
-  //   marginBottom: 20,
-  // },
   heading: {
     fontSize: 24,
     fontWeight: '600',

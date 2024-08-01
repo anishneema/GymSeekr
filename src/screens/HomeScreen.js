@@ -1,21 +1,51 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Modal, ScrollView, SafeAreaView, StatusBar } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Modal, ScrollView, SafeAreaView, StatusBar, Share } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 
+const colors = {
+  primary: '#026bd9', // Steel Blue
+  secondary: '#4A90E2', // Dodger Blue (used sparingly for emphasis)
+  background: '#E9F0F7', // Light blue-grey background
+  white: '#FFFFFF', // White
+  lightGrey: '#D0D8E0', // Light grey
+  mediumGrey: '#2d4150', // Medium grey
+  darkGrey: '#333333', // Dark grey
+  lightText: '#666666', // Light grey text
+};
+
+const quotes = [
+  "The hardest part is over. You showed up.",
+  "If you think you can't, change your mind.",
+  "I am. I can. I will. I do.",
+  "You miss 100 percent of the shots you never take.",
+];
 
 const HomeScreen = ({ navigation }) => {
   const [markedDates, setMarkedDates] = useState({});
   const [workoutLog, setWorkoutLog] = useState([]);
   const [selectedWorkout, setSelectedWorkout] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [userEmail, setUserEmail] = useState(null);
+  const [quoteIndex, setQuoteIndex] = useState(0);
 
+  const loadUserEmail = async () => {
+    try {
+      const email = await AsyncStorage.getItem('userEmail');
+      if (email) {
+        setUserEmail(email);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const loadWorkoutLog = async () => {
+    if (!userEmail) return;
     try {
-      const savedWorkoutLog = await AsyncStorage.getItem('@workout_log');
+      const savedWorkoutLog = await AsyncStorage.getItem(`@workout_log_${userEmail}`);
       if (savedWorkoutLog !== null) {
         const parsedLog = JSON.parse(savedWorkoutLog);
         setWorkoutLog(parsedLog);
@@ -26,24 +56,23 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
+      loadUserEmail();
       loadWorkoutLog();
-    }, [])
+      setQuoteIndex(Math.floor(Math.random() * quotes.length));
+    }, [userEmail])
   );
-
 
   const updateMarkedDates = (log) => {
     const marked = log.reduce((acc, workout) => {
       const date = new Date(workout.date);
       const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-      acc[formattedDate] = { marked: true, dotColor: '#007AFF' };
+      acc[formattedDate] = { marked: true, dotColor: colors.primary };
       return acc;
     }, {});
     setMarkedDates(marked);
   };
-
 
   const handleDatePress = (date) => {
     const selectedDate = new Date(Date.UTC(date.year, date.month - 1, date.day)).toISOString();
@@ -61,12 +90,10 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
-
 
   const renderExercise = ({ item }) => (
     <View style={styles.exerciseContainer}>
@@ -77,6 +104,42 @@ const HomeScreen = ({ navigation }) => {
     </View>
   );
 
+  const calculateWeeklySummary = () => {
+    const today = new Date();
+    const currentDayOfWeek = today.getDay(); // 0 (Sunday) to 6 (Saturday)
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - currentDayOfWeek); // Set to the previous Sunday
+    startOfWeek.setHours(0, 0, 0, 0); // Clear time
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // Set to the following Saturday
+    endOfWeek.setHours(23, 59, 59, 999); // Set time to the end of the day
+
+    const totalWorkouts = workoutLog.filter((workout) => {
+      const workoutDate = new Date(workout.date);
+      return workoutDate >= startOfWeek && workoutDate <= endOfWeek;
+    }).length;
+
+    return {
+      totalWorkouts,
+    };
+  };
+
+  const shareWorkout = async (workout) => {
+    const workoutDetails = workout.exercises.map(ex => `${ex.name}: ${ex.sets} sets, ${ex.reps} reps, ${ex.weight} lbs`).join('\n');
+    const message = `Date: ${formatDate(workout.date)}\nExercises:\n${workoutDetails}`;
+
+    try {
+      await Share.share({
+        message,
+        title: 'Share your workout',
+      });
+    } catch (error) {
+      console.error('Error sharing workout:', error);
+    }
+  };
+
+  const { totalWorkouts } = calculateWeeklySummary();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -85,9 +148,12 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.headerContent}>
           <Text style={styles.appName}>GymSeekr</Text>
           <TouchableOpacity style={styles.settingsButton} onPress={() => navigation.navigate('Settings')}>
-            <Ionicons name="settings-outline" size={24} color="#007AFF" />
+            <Ionicons name="settings-outline" size={24} color={colors.white} />
           </TouchableOpacity>
         </View>
+      </View>
+      <View style={styles.summaryContainer}>
+        <Text style={styles.summaryText}>This Week's Workouts: {totalWorkouts}</Text>
       </View>
       <View style={styles.calendarContainer}>
         <Calendar
@@ -95,18 +161,18 @@ const HomeScreen = ({ navigation }) => {
           markingType={'dot'}
           style={styles.calendar}
           theme={{
-            calendarBackground: '#FFFFFF',
-            textSectionTitleColor: '#007AFF',
-            selectedDayBackgroundColor: '#007AFF',
-            selectedDayTextColor: '#FFFFFF',
-            todayTextColor: '#007AFF',
-            dayTextColor: '#2d4150',
-            textDisabledColor: '#d9e1e8',
-            dotColor: '#007AFF',
-            selectedDotColor: '#FFFFFF',
-            arrowColor: '#007AFF',
-            monthTextColor: '#007AFF',
-            indicatorColor: '#007AFF',
+            calendarBackground: colors.white,
+            textSectionTitleColor: colors.primary,
+            selectedDayBackgroundColor: colors.primary,
+            selectedDayTextColor: colors.white,
+            todayTextColor: colors.primary,
+            dayTextColor: colors.mediumGrey,
+            textDisabledColor: colors.lightText,
+            dotColor: colors.primary,
+            selectedDotColor: colors.white,
+            arrowColor: colors.primary,
+            monthTextColor: colors.primary,
+            indicatorColor: colors.primary,
             textDayFontWeight: '300',
             textMonthFontWeight: 'bold',
             textDayHeaderFontWeight: '300',
@@ -117,6 +183,9 @@ const HomeScreen = ({ navigation }) => {
           onDayPress={handleDatePress}
         />
       </View>
+      <View style={styles.quoteContainer}>
+        <Text style={styles.quoteText}>{quotes[quoteIndex]}</Text>
+      </View>
       <Modal visible={showModal} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
@@ -126,13 +195,21 @@ const HomeScreen = ({ navigation }) => {
                 style={styles.closeButton}
                 onPress={() => setShowModal(false)}
               >
-                <Ionicons name="close" size={24} color="#007AFF" />
+                <Ionicons name="close" size={24} color={colors.primary} />
               </TouchableOpacity>
             </View>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
               {selectedWorkout.map((workout, index) => (
                 <View key={index} style={styles.workoutContainer}>
-                  <Text style={styles.dateText}>{formatDate(workout.date)}</Text>
+                  <View style={styles.workoutHeader}>
+                    <Text style={styles.dateText}>{formatDate(workout.date)}</Text>
+                    <TouchableOpacity
+                      style={styles.shareButton}
+                      onPress={() => shareWorkout(workout)}
+                    >
+                      <Ionicons name="share-outline" size={24} color={colors.primary} />
+                    </TouchableOpacity>
+                  </View>
                   {workout.exercises && (
                     <View style={styles.exerciseBox}>
                       {workout.exercises.map((exercise, index) => (
@@ -152,21 +229,20 @@ const HomeScreen = ({ navigation }) => {
   );
 };
 
-
 const { width } = Dimensions.get('window');
-
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F9FC',
+    backgroundColor: colors.background,
   },
   headerContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.primary,
     paddingVertical: 20,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: colors.lightGrey,
+    elevation: 5,
   },
   headerContent: {
     flexDirection: 'row',
@@ -176,10 +252,29 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: colors.white,
   },
   settingsButton: {
     padding: 8,
+    color: colors.white,
+  },
+  summaryContainer: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+  summaryText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.primary,
+    backgroundColor: colors.white,
+    padding: 12,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+    textAlign: 'center',
   },
   calendarContainer: {
     marginTop: 20,
@@ -187,14 +282,26 @@ const styles = StyleSheet.create({
   },
   calendar: {
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: colors.lightGrey,
     borderRadius: 10,
     overflow: 'hidden',
-    elevation: 4,
+    elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+  },
+  quoteContainer: {
+    marginTop: 75,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  quoteText: {
+    fontSize: 30,
+    fontStyle: 'italic',
+    color: colors.primary,
+    textAlign: 'center',
   },
   modalOverlay: {
     flex: 1,
@@ -202,77 +309,78 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    maxHeight: '80%',
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '75%',
     elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F7F9FC',
-    paddingVertical: 16,
     paddingHorizontal: 20,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
+    paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: colors.lightGrey,
   },
   modalHeading: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#007AFF',
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.primary,
   },
   closeButton: {
-    padding: 4,
+    padding: 8,
   },
   scrollContainer: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 10,
   },
   workoutContainer: {
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    marginBottom: 20,
   },
-  exerciseContainer: {
-    backgroundColor: '#F0F0F0',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  exerciseText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333333',
-  },
-  detailsText: {
-    fontSize: 16,
-    color: '#666666',
-    marginTop: 4,
+  workoutHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   dateText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    color: '#007AFF',
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.primary,
+    marginBottom: 10,
   },
   exerciseBox: {
-    backgroundColor: '#FFFFFF',
-  },  
+    backgroundColor: colors.white,
+    borderRadius: 10,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  exerciseContainer: {
+    marginBottom: 10,
+  },
+  exerciseText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.darkGrey,
+  },
+  detailsText: {
+    fontSize: 14,
+    color: colors.mediumGrey,
+  },
+  shareButton: {
+    padding: 8,
+  },
 });
-
 
 export default HomeScreen;

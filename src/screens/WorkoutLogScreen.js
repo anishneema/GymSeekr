@@ -3,40 +3,62 @@ import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, Alert, S
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 
+const colors = {
+  primary: '#026bd9', // Steel Blue
+  secondary: '#4A90E2', // Dodger Blue
+  background: '#E9F0F7', // Light blue-grey background
+  white: '#FFFFFF', // White
+  lightGrey: '#D0D8E0', // Light grey
+  mediumGrey: '#2d4150', // Medium grey
+  darkGrey: '#333333', // Dark grey
+  lightText: '#666666', // Light grey text
+};
 
 const WorkoutLogScreen = ({ navigation }) => {
   const [workoutLog, setWorkoutLog] = useState([]);
   const [searchText, setSearchText] = useState('');
-
+  const [userEmail, setUserEmail] = useState(null);
 
   useEffect(() => {
-    const loadWorkoutLog = async () => {
+    const loadUserEmailAndLog = async () => {
       try {
-        const savedWorkoutLog = await AsyncStorage.getItem('@workout_log');
-        if (savedWorkoutLog !== null) {
-          setWorkoutLog(JSON.parse(savedWorkoutLog));
+        const email = await AsyncStorage.getItem('userEmail');
+        if (email) {
+          setUserEmail(email);
+          loadWorkoutLog(email);
         }
       } catch (e) {
         console.error(e);
       }
     };
 
-
     const unsubscribe = navigation.addListener('focus', () => {
-      loadWorkoutLog();
+      loadUserEmailAndLog();
     });
-
 
     return unsubscribe;
   }, [navigation]);
 
+  const loadWorkoutLog = async (email) => {
+    try {
+      const workoutLogKey = `@workout_log_${email}`;
+      const savedWorkoutLog = await AsyncStorage.getItem(workoutLogKey);
+      if (savedWorkoutLog !== null) {
+        const parsedWorkoutLog = JSON.parse(savedWorkoutLog);
+        // Sort workouts by date in descending order
+        parsedWorkoutLog.sort((a, b) => new Date(b.date) - new Date(a.date));
+        setWorkoutLog(parsedWorkoutLog);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return date.toLocaleDateString(undefined, options);
   };
-
 
   const renderExercise = ({ item }) => (
     <View style={styles.exerciseContainer}>
@@ -46,7 +68,6 @@ const WorkoutLogScreen = ({ navigation }) => {
       </Text>
     </View>
   );
-
 
   const renderWorkout = ({ item, index }) => (
     <View style={styles.workoutContainer}>
@@ -69,7 +90,6 @@ const WorkoutLogScreen = ({ navigation }) => {
     </View>
   );
 
-
   const confirmDeleteWorkout = (workoutIndex) => {
     Alert.alert(
       'Delete Workout',
@@ -89,7 +109,6 @@ const WorkoutLogScreen = ({ navigation }) => {
     );
   };
 
-
   const deleteWorkout = (workoutIndex) => {
     const updatedWorkoutLog = [...workoutLog];
     updatedWorkoutLog.splice(workoutIndex, 1);
@@ -97,20 +116,18 @@ const WorkoutLogScreen = ({ navigation }) => {
     saveWorkoutLog(updatedWorkoutLog);
   };
 
-
   const saveWorkoutLog = async (updatedLog) => {
     try {
-      await AsyncStorage.setItem('@workout_log', JSON.stringify(updatedLog));
+      const workoutLogKey = `@workout_log_${userEmail}`;
+      await AsyncStorage.setItem(workoutLogKey, JSON.stringify(updatedLog));
     } catch (e) {
       console.error(e);
     }
   };
 
-
   const filteredLog = workoutLog.filter((workout) => {
     const formattedDate = formatDate(workout.date).toLowerCase();
     const searchTextLower = searchText ? searchText.toLowerCase() : '';
-
 
     return (
       formattedDate.includes(searchTextLower) ||
@@ -119,17 +136,17 @@ const WorkoutLogScreen = ({ navigation }) => {
           const exerciseName = exercise.name ? exercise.name.toLowerCase() : '';
           const weight = exercise.weight ? exercise.weight.toString().toLowerCase() : '';
 
-
           return exerciseName.includes(searchTextLower) || weight.includes(searchTextLower);
         }))
     );
   });
 
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <Text style={styles.heading}>Workout Log</Text>
+      <View style={styles.headerContainer}>
+        <Text style={styles.heading}>Workout Log</Text>
+      </View>
       <View style={styles.searchContainer}>
         <Ionicons name="search-outline" size={24} color="#666" style={styles.searchIcon} />
         <TextInput
@@ -151,23 +168,25 @@ const WorkoutLogScreen = ({ navigation }) => {
   );
 };
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    backgroundColor: colors.background,
+  },
+  headerContainer: {
+    backgroundColor: colors.primary,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.lightGrey,
   },
   heading: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    marginBottom: 16,
-    color: '#333',
-    marginLeft: 8,
+    color: colors.white,
   },
   workoutContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderRadius: 8,
     marginBottom: 12,
     padding: 12,
@@ -208,7 +227,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderRadius: 8,
     paddingHorizontal: 12,
     marginBottom: 16,
@@ -230,6 +249,5 @@ const styles = StyleSheet.create({
     padding: 8,
   },
 });
-
 
 export default WorkoutLogScreen;
