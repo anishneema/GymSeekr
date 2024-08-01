@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { signIn} from 'aws-amplify/auth';
 import { signOut} from 'aws-amplify/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 async function handleSignOut() {
@@ -28,15 +29,18 @@ const LoginScreen = ({ navigation }) => {
       if (isSignedIn) {
         // Reset the navigation stack and navigate to the 'Main' screen
         navigateToMain();
+        AsyncStorage.setItem('userEmail',email);
       } else if (nextStep && nextStep.signInStep === 'CONFIRM_SIGN_UP') {
         // Navigate to the VerificationScreen if the user needs to confirm their sign-up
         navigation.navigate('Verification', {username:email, email });
+        AsyncStorage.setItem('userEmail',email);
       } else {
         Alert.alert('Error', 'Invalid email or password');
       }
     } catch (error) {
         if( error.name === 'UserAlreadyAuthenticatedException'){
           navigateToMain();
+          AsyncStorage.setItem('userEmail',email);
         }else{
           Alert.alert('Error signing in', error.message);
           console.log('error signing in', error);

@@ -24,14 +24,20 @@ const SettingsScreen = ({ navigation }) => {
         },
         {
           text: 'Log Out',
-          onPress: () => {
-            // Simulate logout logic
-            // Navigate to the Login screen
-            signOut();
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Login' }],
-            });
+          onPress: async () => {
+            try {
+              // Sign out the user
+              await signOut();
+              // Remove the userEmail key from AsyncStorage
+              await AsyncStorage.removeItem('userEmail');
+              // Navigate to the Login screen
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+              });
+            } catch (error) {
+              console.log('Error logging out:', error);
+            }
           },
           style: 'destructive',
         },
@@ -48,7 +54,7 @@ const SettingsScreen = ({ navigation }) => {
         Alert.alert('Error', 'Async Storage directory not found');
         return;
       }
-  
+
       // Clear the async storage if the directory exists
       await AsyncStorage.clear();
       Alert.alert('Success', 'Async Storage Cleared Successfully');

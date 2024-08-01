@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Dimensions, SafeAreaView, StatusBar, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView, StatusBar,
+  KeyboardAvoidingView, Platform
+} from 'react-native';
 import { SwipeListView } from 'react-native-swipe-list-view';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { listWorkouts } from '../graphql/queries';
+import { createWorkout, createExercise } from '../graphql/mutations';
+import { deleteExercise as deleteExerciseMutation } from '../graphql/mutations';
 
+import { generateClient } from "aws-amplify/api";
+
+const API = generateClient();
 
 const WorkoutTrackerScreen = ({ navigation }) => {
   const [exercises, setExercises] = useState([]);
@@ -13,27 +22,64 @@ const WorkoutTrackerScreen = ({ navigation }) => {
   const [newWeight, setNewWeight] = useState('');
   const [userEmail, setUserEmail] = useState(null);
 
-
   useEffect(() => {
     const loadUserEmail = async () => {
       try {
         const email = await AsyncStorage.getItem('userEmail');
         if (email) {
           setUserEmail(email);
+          fetchWorkouts(email);
         }
       } catch (e) {
         console.error(e);
       }
     };
 
-
     loadUserEmail();
   }, []);
 
+  const fetchWorkouts = async (email) => {
+    try {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+  
+      const filter = {
+        and: [
+          { owner: { eq: email } },
+          { date: { between: [startOfMonth, endOfMonth] } }
+        ]
+      };
+  
+      const result = await API.graphql({
+        query: listWorkouts,
+        variables: { filter }
+      });
+  
+      const workouts = result?.data?.listWorkouts?.items || [];
+      console.log(result);
+      let allExercises = [];
+      workouts.forEach(workout => {
+        allExercises = allExercises.concat(workout?.exercises?.items || []);
+      });
+      setExercises(allExercises);
+      console.log(allExercises);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+  
 
   const addExercise = () => {
     if (newExercise.trim() !== '') {
-      setExercises([...exercises, { key: `${Date.now()}`, name: newExercise, sets: newSets, reps: newReps, weight: newWeight }]);
+      const exercise = {
+        name: newExercise,
+        sets: parseInt(newSets, 10),
+        reps: parseInt(newReps, 10),
+        weight: parseFloat(newWeight)
+      };
+
+      setExercises([...exercises, exercise]);
       setNewExercise('');
       setNewSets('');
       setNewReps('');
@@ -41,23 +87,30 @@ const WorkoutTrackerScreen = ({ navigation }) => {
     }
   };
 
-
   const saveWorkout = async () => {
     if (exercises.length > 0 && userEmail) {
+      const now = new Date().toISOString();
+      const workout = {
+        date: now,
+        owner: userEmail,
+      };
+
       try {
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-        const workoutLogKey = `@workout_log_${userEmail}`;
-        const existingWorkouts = await AsyncStorage.getItem(workoutLogKey);
-        const workoutLogs = existingWorkouts ? JSON.parse(existingWorkouts) : [];
-        const newWorkoutLog = { date: today, exercises: exercises };
+        // Create the workout
+        const result = await API.graphql({
+          query: createWorkout,
+          variables: { input: workout }
+        });
 
+        const workoutId = result.data.createWorkout.id;
 
-        workoutLogs.unshift(newWorkoutLog);
-
-
-        await AsyncStorage.setItem(workoutLogKey, JSON.stringify(workoutLogs));
-
+        // Save each exercise and associate it with the workout
+        for (const exercise of exercises) {
+          await API.graphql({
+            query: createExercise,
+            variables: { input: { ...exercise, date: now, owner: userEmail, workoutID: workoutId } }
+          });
+        }
 
         setExercises([]);
         navigation.navigate('WorkoutLog');
@@ -66,7 +119,6 @@ const WorkoutTrackerScreen = ({ navigation }) => {
       }
     }
   };
-
 
   const clearExercises = () => {
     Alert.alert(
@@ -79,7 +131,6 @@ const WorkoutTrackerScreen = ({ navigation }) => {
       { cancelable: true }
     );
   };
-
 
   const confirmDeleteExercise = (rowKey) => {
     Alert.alert(
@@ -94,10 +145,26 @@ const WorkoutTrackerScreen = ({ navigation }) => {
   };
 
 
-  const deleteExercise = (rowKey) => {
-    setExercises((prevExercises) => prevExercises.filter((exercise) => exercise.key !== rowKey));
-  };
+const deleteExercise = async (rowKey) => {
+  const exerciseToDelete = exercises[rowKey];
+  
+  if (exerciseToDelete && exerciseToDelete.id && exerciseToDelete._version !== undefined) {
+    try {
+      await API.graphql({
+        query: deleteExerciseMutation,
+        variables: { input: { id: exerciseToDelete.id, _version: exerciseToDelete._version } }
+      });
 
+      setExercises((prevExercises) => prevExercises.filter((_, index) => index !== rowKey));
+    } catch (e) {
+      console.error('Error deleting exercise:', e);
+    }
+  } else {
+    setExercises((prevExercises) => prevExercises.filter((_, index) => index !== rowKey));
+  }
+};
+
+  
 
   const renderExercise = (data) => (
     <View style={styles.exerciseContainer}>
@@ -108,15 +175,16 @@ const WorkoutTrackerScreen = ({ navigation }) => {
     </View>
   );
 
-
-  const renderHiddenItem = () => (
-    <View style={styles.rowBack}>
+  const renderHiddenItem = (data, rowMap) => (
+    <TouchableOpacity
+      style={styles.rowBack}
+      onPress={() => confirmDeleteExercise(data.index)}
+    >
       <View style={styles.backRightBtn}>
         <Ionicons name="trash-outline" size={24} color="#FFFFFF" />
       </View>
-    </View>
+    </TouchableOpacity>
   );
-
 
   return (
     <SafeAreaView style={styles.container}>
@@ -180,9 +248,6 @@ const WorkoutTrackerScreen = ({ navigation }) => {
           renderHiddenItem={renderHiddenItem}
           rightOpenValue={-75}
           disableRightSwipe
-          onRowOpen={(rowKey) => {
-            confirmDeleteExercise(rowKey);
-          }}
           useNativeDriver={false}
           style={styles.swipeListView}
         />
@@ -190,7 +255,6 @@ const WorkoutTrackerScreen = ({ navigation }) => {
     </SafeAreaView>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
@@ -250,7 +314,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   clearButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#FF3B30',
   },
   buttonText: {
     color: '#FFFFFF',
@@ -314,6 +378,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF3B30',
   },
 });
-
 
 export default WorkoutTrackerScreen;

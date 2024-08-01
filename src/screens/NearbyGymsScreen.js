@@ -1,12 +1,10 @@
-// NearbyGyms.js
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TextInput, TouchableOpacity, Alert, Text, SafeAreaView, StatusBar, Animated } from 'react-native';
-import { GOOGLE_MAPS_API_KEY } from '../../config.js';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useNavigation } from '@react-navigation/native';
-import { gymData } from './Database';
 import { Ionicons } from '@expo/vector-icons';
-
+import { GOOGLE_MAPS_API_KEY } from '../../config.js';
+import { gymData } from './Database';
 
 const NearbyGymScreen = () => {
   const [gymSearchQuery, setGymSearchQuery] = useState('');
@@ -23,7 +21,6 @@ const NearbyGymScreen = () => {
   const navigation = useNavigation();
   const fadeAnim = new Animated.Value(0);
 
-
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -32,11 +29,9 @@ const NearbyGymScreen = () => {
     }).start();
   }, []);
 
-
   const handleRegionChange = (region) => {
     setMapRegion(region);
   };
-
 
   const fetchNearbyGyms = async () => {
     setIsLoading(true);
@@ -57,7 +52,6 @@ const NearbyGymScreen = () => {
     }
   };
 
-
   const handleMarkerPress = (gym) => {
     const gymDetails = gymData.find(g => g.name === gym.name) || {
       id: gym.place_id,
@@ -70,7 +64,6 @@ const NearbyGymScreen = () => {
     navigation.navigate('GymDetails', { gym: gymDetails });
   };
 
-
   const handleSearch = () => {
     if (gymSearchQuery.trim() === '' && equipmentSearchQuery.trim() === '') {
       setGyms([]);
@@ -78,12 +71,10 @@ const NearbyGymScreen = () => {
       return;
     }
 
-
     if (equipmentSearchQuery.length > 0 && equipmentSearchQuery.length < 3) {
       Alert.alert('Error', 'Equipment search query must be at least 3 characters long.');
       return;
     }
-
 
     fetchNearbyGyms().then(() => {
       if (equipmentSearchQuery.length >= 3) {
@@ -97,7 +88,6 @@ const NearbyGymScreen = () => {
       }
     });
   };
-
 
   return (
     <SafeAreaView style={styles.container}>
@@ -164,7 +154,6 @@ const NearbyGymScreen = () => {
     </SafeAreaView>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
@@ -261,6 +250,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
-
 
 export default NearbyGymScreen;

@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, Alert, SafeAreaView, StatusBar } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { listWorkouts } from '../graphql/queries';
+import { generateClient } from "aws-amplify/api";
+import { deleteWorkout as deleteWorkoutMutation } from '../graphql/mutations';
 
+const API = generateClient();
 
 const WorkoutLogScreen = ({ navigation }) => {
   const [workoutLog, setWorkoutLog] = useState([]);
   const [searchText, setSearchText] = useState('');
   const [userEmail, setUserEmail] = useState(null);
-
 
   useEffect(() => {
     const loadUserEmailAndLog = async () => {
@@ -23,35 +26,36 @@ const WorkoutLogScreen = ({ navigation }) => {
       }
     };
 
-
     const unsubscribe = navigation.addListener('focus', () => {
       loadUserEmailAndLog();
     });
 
-
     return unsubscribe;
   }, [navigation]);
 
-
   const loadWorkoutLog = async (email) => {
     try {
-      const workoutLogKey = `@workout_log_${email}`;
-      const savedWorkoutLog = await AsyncStorage.getItem(workoutLogKey);
-      if (savedWorkoutLog !== null) {
-        setWorkoutLog(JSON.parse(savedWorkoutLog));
-      }
+      const filter = {
+        owner: { eq: email }
+      };
+
+      const result = await API.graphql({
+        query: listWorkouts,
+        variables: { filter }
+      });
+
+      const workouts = result?.data?.listWorkouts?.items.filter(workout => !workout._deleted) || [];
+      setWorkoutLog(workouts);
     } catch (e) {
       console.error(e);
     }
   };
-
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return date.toLocaleDateString(undefined, options);
   };
-
 
   const renderExercise = ({ item }) => (
     <View style={styles.exerciseContainer}>
@@ -61,7 +65,6 @@ const WorkoutLogScreen = ({ navigation }) => {
       </Text>
     </View>
   );
-
 
   const renderWorkout = ({ item, index }) => (
     <View style={styles.workoutContainer}>
@@ -74,16 +77,15 @@ const WorkoutLogScreen = ({ navigation }) => {
           <Ionicons name="trash-outline" size={24} color="#666" />
         </TouchableOpacity>
       </View>
-      {item.exercises && (
+      {Array.isArray(item.exercises?.items) && (
         <View style={styles.exerciseBox}>
-          {item.exercises.map((exercise, exerciseIndex) => (
+          {item.exercises.items.map((exercise, exerciseIndex) => (
             <React.Fragment key={exerciseIndex}>{renderExercise({ item: exercise })}</React.Fragment>
           ))}
         </View>
       )}
     </View>
   );
-
 
   const confirmDeleteWorkout = (workoutIndex) => {
     Alert.alert(
@@ -104,43 +106,36 @@ const WorkoutLogScreen = ({ navigation }) => {
     );
   };
 
-
-  const deleteWorkout = (workoutIndex) => {
-    const updatedWorkoutLog = [...workoutLog];
-    updatedWorkoutLog.splice(workoutIndex, 1);
-    setWorkoutLog(updatedWorkoutLog);
-    saveWorkoutLog(updatedWorkoutLog);
-  };
-
-
-  const saveWorkoutLog = async (updatedLog) => {
+  const deleteWorkout = async (workoutIndex) => {
     try {
-      const workoutLogKey = `@workout_log_${userEmail}`;
-      await AsyncStorage.setItem(workoutLogKey, JSON.stringify(updatedLog));
+      const workoutToDelete = workoutLog[workoutIndex];
+      if (workoutToDelete && workoutToDelete.id && workoutToDelete._version !== undefined) {
+        await API.graphql({
+          query: deleteWorkoutMutation,
+          variables: { input: { id: workoutToDelete.id, _version: workoutToDelete._version } }
+        });
+        setWorkoutLog((prevWorkoutLog) => prevWorkoutLog.filter((_, index) => index !== workoutIndex));
+      }
     } catch (e) {
-      console.error(e);
+      console.error('Error deleting workout:', e);
     }
   };
-
 
   const filteredLog = workoutLog.filter((workout) => {
     const formattedDate = formatDate(workout.date).toLowerCase();
     const searchTextLower = searchText ? searchText.toLowerCase() : '';
 
-
     return (
       formattedDate.includes(searchTextLower) ||
-      (workout.exercises &&
-        workout.exercises.some((exercise) => {
+      (Array.isArray(workout.exercises?.items) &&
+        workout.exercises.items.some((exercise) => {
           const exerciseName = exercise.name ? exercise.name.toLowerCase() : '';
           const weight = exercise.weight ? exercise.weight.toString().toLowerCase() : '';
-
 
           return exerciseName.includes(searchTextLower) || weight.includes(searchTextLower);
         }))
     );
   });
-
 
   return (
     <SafeAreaView style={styles.container}>
@@ -166,7 +161,6 @@ const WorkoutLogScreen = ({ navigation }) => {
     </SafeAreaView>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
@@ -246,6 +240,5 @@ const styles = StyleSheet.create({
     padding: 8,
   },
 });
-
 
 export default WorkoutLogScreen;

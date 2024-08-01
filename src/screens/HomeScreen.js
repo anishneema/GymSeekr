@@ -4,7 +4,10 @@ import { Calendar } from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { listWorkouts } from '../graphql/queries';
+import { generateClient } from "aws-amplify/api";
 
+const API = generateClient();
 
 const HomeScreen = ({ navigation }) => {
   const [markedDates, setMarkedDates] = useState({});
@@ -13,41 +16,53 @@ const HomeScreen = ({ navigation }) => {
   const [showModal, setShowModal] = useState(false);
   const [userEmail, setUserEmail] = useState(null);
 
-
-  const loadUserEmail = async () => {
-    try {
-      const email = await AsyncStorage.getItem('userEmail');
-      if (email) {
-        setUserEmail(email);
+  useEffect(() => {
+    const loadUserEmail = async () => {
+      try {
+        const email = await AsyncStorage.getItem('userEmail');
+        if (email) {
+          setUserEmail(email);
+        }
+      } catch (e) {
+        console.error('Error loading user email:', e);
       }
-    } catch (e) {
-      console.error(e);
-    }
-  };
+    };
 
+    loadUserEmail();
+  }, []);
+
+  useEffect(() => {
+    if (userEmail) {
+      loadWorkoutLog();
+    }
+  }, [userEmail]);
 
   const loadWorkoutLog = async () => {
     if (!userEmail) return;
     try {
-      const savedWorkoutLog = await AsyncStorage.getItem(`@workout_log_${userEmail}`);
-      if (savedWorkoutLog !== null) {
-        const parsedLog = JSON.parse(savedWorkoutLog);
-        setWorkoutLog(parsedLog);
-        updateMarkedDates(parsedLog);
-      }
+      const filter = {
+        owner: { eq: userEmail }
+      };
+
+      const result = await API.graphql({
+        query: listWorkouts,
+        variables: { filter }
+      });
+
+      const workouts = result?.data?.listWorkouts?.items.filter(workout => !workout._deleted) || [];
+      console.log('Fetched workouts:', workouts);
+      setWorkoutLog(workouts);
+      updateMarkedDates(workouts);
     } catch (e) {
-      console.error(e);
+      console.error('Error loading workout log:', e);
     }
   };
 
-
   useFocusEffect(
     useCallback(() => {
-      loadUserEmail();
       loadWorkoutLog();
     }, [userEmail])
   );
-
 
   const updateMarkedDates = (log) => {
     const marked = log.reduce((acc, workout) => {
@@ -59,7 +74,6 @@ const HomeScreen = ({ navigation }) => {
     setMarkedDates(marked);
   };
 
-
   const handleDatePress = (date) => {
     const selectedDate = new Date(Date.UTC(date.year, date.month - 1, date.day)).toISOString();
     const workoutsForSelectedDate = workoutLog.filter((workout) => {
@@ -70,18 +84,17 @@ const HomeScreen = ({ navigation }) => {
         workoutDate.getDate() === date.day
       );
     });
+    console.log('Workouts for selected date:', workoutsForSelectedDate);
     if (workoutsForSelectedDate.length > 0) {
       setSelectedWorkout(workoutsForSelectedDate);
       setShowModal(true);
     }
   };
 
-
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
-
 
   const renderExercise = ({ item }) => (
     <View style={styles.exerciseContainer}>
@@ -91,7 +104,6 @@ const HomeScreen = ({ navigation }) => {
       </Text>
     </View>
   );
-
 
   return (
     <SafeAreaView style={styles.container}>
@@ -148,14 +160,16 @@ const HomeScreen = ({ navigation }) => {
               {selectedWorkout.map((workout, index) => (
                 <View key={index} style={styles.workoutContainer}>
                   <Text style={styles.dateText}>{formatDate(workout.date)}</Text>
-                  {workout.exercises && (
+                  {workout.exercises && Array.isArray(workout.exercises.items) && workout.exercises.items.length > 0 ? (
                     <View style={styles.exerciseBox}>
-                      {workout.exercises.map((exercise, index) => (
-                        <React.Fragment key={index}>
+                      {workout.exercises.items.map((exercise, exerciseIndex) => (
+                        <React.Fragment key={exerciseIndex}>
                           {renderExercise({ item: exercise })}
                         </React.Fragment>
                       ))}
                     </View>
+                  ) : (
+                    <Text style={styles.noExercisesText}>No exercises recorded.</Text>
                   )}
                 </View>
               ))}
@@ -167,9 +181,7 @@ const HomeScreen = ({ navigation }) => {
   );
 };
 
-
 const { width } = Dimensions.get('window');
-
 
 const styles = StyleSheet.create({
   container: {
@@ -281,7 +293,11 @@ const styles = StyleSheet.create({
   exerciseBox: {
     backgroundColor: '#FFFFFF',
   },
+  noExercisesText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 8,
+  },
 });
-
 
 export default HomeScreen;
