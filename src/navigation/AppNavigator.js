@@ -78,8 +78,8 @@ const MainNavigator = () => (
     })}
   >
     <Tab.Screen name="Home" component={HomeStack} options={{ headerShown: false }} />
-    <Tab.Screen name="WorkoutTracker" component={WorkoutTrackerScreen} options={{ title: 'Tracker' }} />
-    <Tab.Screen name="WorkoutLog" component={WorkoutLogScreen} options={{ title: 'Log' }} />
+    <Tab.Screen name="WorkoutTracker" component={WorkoutTrackerScreen} options={{ headerShown: false  }} />
+    <Tab.Screen name="WorkoutLog" component={WorkoutLogScreen} options={{ headerShown: false }} />
     <Tab.Screen name="NearbyGyms" component={NearbyGymsStack} options={{ title: 'Gyms', headerShown: false }} />
   </Tab.Navigator>
 );
