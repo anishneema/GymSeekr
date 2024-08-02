@@ -33,7 +33,9 @@ const HomeScreen = ({ navigation }) => {
   const [showModal, setShowModal] = useState(false);
   const [userEmail, setUserEmail] = useState(null);
   const [quoteIndex, setQuoteIndex] = useState(0);
-
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  
   useEffect(() => {
     const loadUserEmail = async () => {
       try {
@@ -55,12 +57,25 @@ const HomeScreen = ({ navigation }) => {
     }
   }, [userEmail]);
 
-  const loadWorkoutLog = async () => {
+  const handleMonthChange = (month) => {
+    setCurrentMonth(month.month);
+    setCurrentYear(month.year);
+    loadWorkoutLog(month.month, month.year);
+  };
+  
+  const loadWorkoutLog = async (month = currentMonth, year = currentYear) => {
     if (!userEmail) return;
+    const startOfMonth = new Date(year, month - 1, 1).toISOString();
+    const endOfMonth = new Date(year, month, 0).toISOString();
+
     try {
       const filter = {
-        owner: { eq: userEmail }
+        and: [
+          { owner: { eq: userEmail } },
+          { date: { between: [startOfMonth, endOfMonth] } }
+        ]
       };
+
 
       const result = await API.graphql({
         query: listWorkouts,
@@ -203,6 +218,7 @@ const HomeScreen = ({ navigation }) => {
             textDayHeaderFontSize: 16
           }}
           onDayPress={handleDatePress}
+          onMonthChange={handleMonthChange}
         />
       </View>
       <View style={styles.quoteContainer}>

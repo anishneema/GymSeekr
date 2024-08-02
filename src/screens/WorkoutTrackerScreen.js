@@ -89,37 +89,6 @@ const WorkoutTrackerScreen = ({ navigation }) => {
     }
   }, [newExercise]);
 
-// leaving this code here for now. We may need the month filter logic  
-  const fetchWorkouts = async (email) => {
-    try {
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
-  
-      const filter = {
-        and: [
-          { owner: { eq: email } },
-          { date: { between: [startOfMonth, endOfMonth] } }
-        ]
-      };
-  
-      const result = await API.graphql({
-        query: listWorkouts,
-        variables: { filter }
-      });
-  
-      const workouts = result?.data?.listWorkouts?.items || [];
-      console.log(result);
-      let allExercises = [];
-      workouts.forEach(workout => {
-        allExercises = allExercises.concat(workout?.exercises?.items || []);
-      });
-      setExercises(allExercises);
-      console.log(allExercises);
-    } catch (e) {
-      console.error(e);
-    }
-  };
   
   const addExercise = () => {
     if (newExercise.trim() !== '') {
