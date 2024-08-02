@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView, StatusBar,
   KeyboardAvoidingView, Platform
@@ -61,6 +61,7 @@ const WorkoutTrackerScreen = ({ navigation }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const timeoutRef = useRef(null);
+
   useEffect(() => {
     const loadUserEmail = async () => {
       try {
@@ -119,7 +120,6 @@ const WorkoutTrackerScreen = ({ navigation }) => {
     }
   };
   
-
   const addExercise = () => {
     if (newExercise.trim() !== '') {
       const exercise = {
@@ -140,9 +140,8 @@ const WorkoutTrackerScreen = ({ navigation }) => {
 
   const saveWorkout = async () => {
     if (exercises.length > 0 && userEmail) {
-      const now = new Date().toISOString();
       const workout = {
-        date: now,
+        date: workoutDate.toISOString(), // Use the selected workoutDate
         owner: userEmail,
       };
 
@@ -159,7 +158,7 @@ const WorkoutTrackerScreen = ({ navigation }) => {
         for (const exercise of exercises) {
           await API.graphql({
             query: createExercise,
-            variables: { input: { ...exercise, date: now, owner: userEmail, workoutID: workoutId } }
+            variables: { input: { ...exercise, date: workoutDate.toISOString(), owner: userEmail, workoutID: workoutId } }
           });
         }
 
@@ -195,26 +194,24 @@ const WorkoutTrackerScreen = ({ navigation }) => {
     );
   };
 
-const deleteExercise = async (rowKey) => {
-  const exerciseToDelete = exercises[rowKey];
-  
-  if (exerciseToDelete && exerciseToDelete.id && exerciseToDelete._version !== undefined) {
-    try {
-      await API.graphql({
-        query: deleteExerciseMutation,
-        variables: { input: { id: exerciseToDelete.id, _version: exerciseToDelete._version } }
-      });
+  const deleteExercise = async (rowKey) => {
+    const exerciseToDelete = exercises[rowKey];
+    
+    if (exerciseToDelete && exerciseToDelete.id && exerciseToDelete._version !== undefined) {
+      try {
+        await API.graphql({
+          query: deleteExerciseMutation,
+          variables: { input: { id: exerciseToDelete.id, _version: exerciseToDelete._version } }
+        });
 
+        setExercises((prevExercises) => prevExercises.filter((_, index) => index !== rowKey));
+      } catch (e) {
+        console.error('Error deleting exercise:', e);
+      }
+    } else {
       setExercises((prevExercises) => prevExercises.filter((_, index) => index !== rowKey));
-    } catch (e) {
-      console.error('Error deleting exercise:', e);
     }
-  } else {
-    setExercises((prevExercises) => prevExercises.filter((_, index) => index !== rowKey));
-  }
-};
-
-  
+  };
 
   const renderExercise = (data) => (
     <View style={styles.exerciseContainer}>
@@ -224,6 +221,7 @@ const deleteExercise = async (rowKey) => {
       </Text>
     </View>
   );
+
   const renderHiddenItem = (data, rowMap) => (
     <TouchableOpacity
       style={styles.rowBack}
@@ -240,10 +238,10 @@ const deleteExercise = async (rowKey) => {
   };
 
   const handleDateChange = (event, selectedDate) => {
-    setShowDatePicker(false); // Always close the picker first
-    if (event.type === 'set' && selectedDate) {
-      setWorkoutDate(selectedDate); // Set the date only if selected
+    if (selectedDate) {
+      setWorkoutDate(selectedDate);
     }
+    setShowDatePicker(false); // Always close the picker
   };
 
   const handleSuggestionClick = (exercise) => {
@@ -386,7 +384,6 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 32,
-    fontSize: 32,
     fontWeight: 'bold',
     color: colors.white,
   },
@@ -458,7 +455,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingHorizontal: 20,
     marginBottom: 20,
     zIndex: 0,
   },
@@ -512,9 +508,6 @@ const styles = StyleSheet.create({
   detailsText: {
     fontSize: 14,
     color: colors.mediumGrey,
-  },
-  swipeListView: {
-    paddingHorizontal: 20,
   },
   rowBack: {
     alignItems: 'center',

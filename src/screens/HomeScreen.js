@@ -33,6 +33,7 @@ const HomeScreen = ({ navigation }) => {
   const [showModal, setShowModal] = useState(false);
   const [userEmail, setUserEmail] = useState(null);
   const [quoteIndex, setQuoteIndex] = useState(0);
+
   useEffect(() => {
     const loadUserEmail = async () => {
       try {
@@ -145,12 +146,14 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const shareWorkout = async (workout) => {
-    const workoutDetails = workout.exercises.map(ex => `${ex.name}: ${ex.sets} sets, ${ex.reps} reps, ${ex.weight} lbs`).join('\n');
+    const workoutDetails = workout.exercises.items.map(ex => `${ex.name}: ${ex.sets} sets, ${ex.reps} reps, ${ex.weight} lbs`).join('\n');
     const message = `Date: ${formatDate(workout.date)}\nExercises:\n${workoutDetails}`;
+
+    console.log('Sharing message:', message); // Add this line to debug
 
     try {
       await Share.share({
-        message,
+        message: message,
         title: 'Share your workout',
       });
     } catch (error) {
@@ -229,7 +232,7 @@ const HomeScreen = ({ navigation }) => {
                       <Ionicons name="share-outline" size={24} color={colors.primary} />
                     </TouchableOpacity>
                   </View>
-                  {workout.exercises && (
+                  {workout.exercises && Array.isArray(workout.exercises.items) && workout.exercises.items.length > 0 ? (
                     <View style={styles.exerciseBox}>
                       {workout.exercises.items.map((exercise, exerciseIndex) => (
                         <React.Fragment key={exerciseIndex}>

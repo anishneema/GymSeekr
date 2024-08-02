@@ -121,7 +121,6 @@ const NearbyGymScreen = () => {
         </TouchableOpacity>
       </Animated.View>
       <MapView
-        ref={mapRef}
         style={styles.map}
         provider={PROVIDER_GOOGLE}
         initialRegion={mapRegion}
