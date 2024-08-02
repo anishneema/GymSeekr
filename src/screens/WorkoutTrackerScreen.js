@@ -68,7 +68,7 @@ const WorkoutTrackerScreen = ({ navigation }) => {
         const email = await AsyncStorage.getItem('userEmail');
         if (email) {
           setUserEmail(email);
-          fetchWorkouts(email);
+          
         }
       } catch (e) {
         console.error(e);
@@ -89,6 +89,7 @@ const WorkoutTrackerScreen = ({ navigation }) => {
     }
   }, [newExercise]);
 
+// leaving this code here for now. We may need the month filter logic  
   const fetchWorkouts = async (email) => {
     try {
       const now = new Date();
