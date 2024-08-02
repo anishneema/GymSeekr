@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { signIn} from 'aws-amplify/auth';
 import { signOut} from 'aws-amplify/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-
 async function handleSignOut() {
   try {
     await signOut();
@@ -13,43 +11,32 @@ async function handleSignOut() {
   }
 }
 
-
-
-
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = async () => {
     try {
-      const { isSignedIn, nextStep } = await signIn({ username: email, password });
+      await signOut(); // Ensure any existing user is signed out
+      await signIn({ username: email, password });
       
-      if (isSignedIn) {
-        // Store the email as a simple identifier (not secure, just for demonstration)
-        await AsyncStorage.setItem('userEmail', email);
+      // Store the email as a simple identifier (not secure, just for demonstration)
+      await AsyncStorage.setItem('userEmail', email);
 
-        // Reset the navigation stack and navigate to the 'Main' screen
-        navigateToMain();
-        AsyncStorage.setItem('userEmail',email);
-      } else if (nextStep && nextStep.signInStep === 'CONFIRM_SIGN_UP') {
+      // Reset the navigation stack and navigate to the 'Main' screen
+      navigateToMain();
+    } catch (error) {
+      if (error.code === 'UserNotConfirmedException') {
         // Navigate to the VerificationScreen if the user needs to confirm their sign-up
-        navigation.navigate('Verification', {username:email, email });
-        AsyncStorage.setItem('userEmail',email);
+        navigation.navigate('Verification', { username: email });
       } else {
         Alert.alert('Error', 'Invalid email or password');
+        console.log('error signing in', error);
       }
-    } catch (error) {
-        if( error.name === 'UserAlreadyAuthenticatedException'){
-          navigateToMain();
-          AsyncStorage.setItem('userEmail',email);
-        }else{
-          Alert.alert('Error signing in', error.message);
-          console.log('error signing in', error);
-        }
-    } 
+    }
   };
 
-  function navigateToMain(){
+  function navigateToMain() {
     navigation.reset({
       index: 0,
       routes: [{ name: 'Main' }],
@@ -79,7 +66,6 @@ const LoginScreen = ({ navigation }) => {
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Sign in</Text>
       </TouchableOpacity>
-   
       <View style={styles.registerContainer}>
         <Text style={styles.registerText}>New to GymSeekr?</Text>
         <TouchableOpacity onPress={() => navigation.navigate('Registration')}>
