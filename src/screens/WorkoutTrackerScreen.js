@@ -9,11 +9,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { listWorkouts } from '../graphql/queries';
 import { createWorkout, createExercise } from '../graphql/mutations';
 import { deleteExercise as deleteExerciseMutation } from '../graphql/mutations';
-
 import { generateClient } from "aws-amplify/api";
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const API = generateClient();
-import DateTimePicker from '@react-native-community/datetimepicker';
 
 const colors = {
   primary: '#026bd9', // Steel Blue
@@ -58,6 +57,7 @@ const WorkoutTrackerScreen = ({ navigation }) => {
   const [newWeight, setNewWeight] = useState('');
   const [userEmail, setUserEmail] = useState(null);
   const [workoutDate, setWorkoutDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const timeoutRef = useRef(null);
 
@@ -67,7 +67,6 @@ const WorkoutTrackerScreen = ({ navigation }) => {
         const email = await AsyncStorage.getItem('userEmail');
         if (email) {
           setUserEmail(email);
-          
         }
       } catch (e) {
         console.error(e);
@@ -88,14 +87,13 @@ const WorkoutTrackerScreen = ({ navigation }) => {
     }
   }, [newExercise]);
 
-  
   const addExercise = () => {
     if (newExercise.trim() !== '') {
       const exercise = {
         name: newExercise,
-        sets: parseInt(newSets, 10),
-        reps: parseInt(newReps, 10),
-        weight: parseFloat(newWeight)
+        sets: newSets ? parseInt(newSets, 10) : 0,
+        reps: newReps ? parseInt(newReps, 10) : 0,
+        weight: newWeight ? parseFloat(newWeight) : 0
       };
 
       setExercises([...exercises, exercise]);
@@ -205,6 +203,9 @@ const WorkoutTrackerScreen = ({ navigation }) => {
   const handleDateChange = (event, selectedDate) => {
     if (selectedDate) {
       setWorkoutDate(selectedDate);
+      if (Platform.OS === 'android') {
+        setShowDatePicker(false); // Hide date picker on Android after selecting date
+      }
     }
   };
 
@@ -234,7 +235,7 @@ const WorkoutTrackerScreen = ({ navigation }) => {
           <Text style={styles.heading}>Workout Tracker</Text>
         </View>
         <View style={styles.datePickerContainer}>
-          {(
+          {Platform.OS === 'ios' ? (
             <DateTimePicker
               style={styles.datePicker}
               value={workoutDate}
@@ -243,6 +244,21 @@ const WorkoutTrackerScreen = ({ navigation }) => {
               onChange={handleDateChange}
               maximumDate={new Date()} // Restrict to current date or earlier
             />
+          ) : (
+            <View>
+              <TouchableOpacity style={styles.datePickerBox} onPress={() => setShowDatePicker(true)}>
+                <Text style={styles.dateText}>{workoutDate.toDateString()}</Text>
+              </TouchableOpacity>
+              {showDatePicker && (
+                <DateTimePicker
+                  value={workoutDate}
+                  mode="date"
+                  display="default"
+                  onChange={handleDateChange}
+                  maximumDate={new Date()} // Restrict to current date or earlier
+                />
+              )}
+            </View>
           )}
         </View>
         <View style={styles.inputContainer}>
@@ -353,10 +369,19 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     zIndex: 0,
   },
+  datePickerBox: {
+    width: 150,
+    height: 40,
+    borderColor: colors.lightGrey,
+    borderWidth: 1,
+    borderRadius: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.white,
+  },
   dateText: {
     fontSize: 16,
     color: colors.darkGrey,
-    marginBottom: 5,
   },
   datePicker: {
     width: 125,

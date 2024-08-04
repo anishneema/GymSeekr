@@ -29,13 +29,14 @@ const quotes = [
 const HomeScreen = ({ navigation }) => {
   const [markedDates, setMarkedDates] = useState({});
   const [workoutLog, setWorkoutLog] = useState([]);
+  const [weeklyWorkouts, setWeeklyWorkouts] = useState([]);
   const [selectedWorkout, setSelectedWorkout] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [userEmail, setUserEmail] = useState(null);
   const [quoteIndex, setQuoteIndex] = useState(0);
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-  
+
   useEffect(() => {
     const loadUserEmail = async () => {
       try {
@@ -54,6 +55,7 @@ const HomeScreen = ({ navigation }) => {
   useEffect(() => {
     if (userEmail) {
       loadWorkoutLog();
+      loadWeeklyWorkouts();
     }
   }, [userEmail]);
 
@@ -62,7 +64,7 @@ const HomeScreen = ({ navigation }) => {
     setCurrentYear(month.year);
     loadWorkoutLog(month.month, month.year);
   };
-  
+
   const loadWorkoutLog = async (month = currentMonth, year = currentYear) => {
     if (!userEmail) return;
     const startOfMonth = new Date(year, month - 1, 1).toISOString();
@@ -75,7 +77,6 @@ const HomeScreen = ({ navigation }) => {
           { date: { between: [startOfMonth, endOfMonth] } }
         ]
       };
-
 
       const result = await API.graphql({
         query: listWorkouts,
@@ -91,9 +92,41 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
+  const loadWeeklyWorkouts = async () => {
+    if (!userEmail) return;
+
+    const today = new Date();
+    const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(today.setDate(today.getDate() - today.getDay() + 6));
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    try {
+      const filter = {
+        and: [
+          { owner: { eq: userEmail } },
+          { date: { between: [startOfWeek.toISOString(), endOfWeek.toISOString()] } }
+        ]
+      };
+
+      const result = await API.graphql({
+        query: listWorkouts,
+        variables: { filter }
+      });
+
+      const workouts = result?.data?.listWorkouts?.items.filter(workout => !workout._deleted) || [];
+      console.log('Fetched weekly workouts:', workouts);
+      setWeeklyWorkouts(workouts);
+    } catch (e) {
+      console.error('Error loading weekly workouts:', e);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       loadWorkoutLog();
+      loadWeeklyWorkouts();
       setQuoteIndex(Math.floor(Math.random() * quotes.length));
     }, [userEmail])
   );
@@ -140,23 +173,8 @@ const HomeScreen = ({ navigation }) => {
   );
 
   const calculateWeeklySummary = () => {
-    const today = new Date();
-    const currentDayOfWeek = today.getDay(); // 0 (Sunday) to 6 (Saturday)
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - currentDayOfWeek); // Set to the previous Sunday
-    startOfWeek.setHours(0, 0, 0, 0); // Clear time
-
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6); // Set to the following Saturday
-    endOfWeek.setHours(23, 59, 59, 999); // Set time to the end of the day
-
-    const totalWorkouts = workoutLog.filter((workout) => {
-      const workoutDate = new Date(workout.date);
-      return workoutDate >= startOfWeek && workoutDate <= endOfWeek;
-    }).length;
-
     return {
-      totalWorkouts,
+      totalWorkouts: weeklyWorkouts.length,
     };
   };
 
@@ -164,7 +182,7 @@ const HomeScreen = ({ navigation }) => {
     const workoutDetails = workout.exercises.items.map(ex => `${ex.name}: ${ex.sets} sets, ${ex.reps} reps, ${ex.weight} lbs`).join('\n');
     const message = `Date: ${formatDate(workout.date)}\nExercises:\n${workoutDetails}`;
 
-    console.log('Sharing message:', message); // Add this line to debug
+    console.log('Sharing message:', message);
 
     try {
       await Share.share({

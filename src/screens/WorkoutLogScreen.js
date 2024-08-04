@@ -77,13 +77,13 @@ const WorkoutLogScreen = ({ navigation }) => {
     </View>
   );
 
-  const renderWorkout = ({ item, index }) => (
+  const renderWorkout = ({ item }) => (
     <View style={styles.workoutContainer}>
       <View style={styles.workoutHeader}>
         <Text style={styles.dateText}>{formatDate(item.date)}</Text>
         <TouchableOpacity
           style={styles.deleteButton}
-          onPress={() => confirmDeleteWorkout(index)}
+          onPress={() => confirmDeleteWorkout(item.id)}
         >
           <Ionicons name="trash-outline" size={24} color="#666" />
         </TouchableOpacity>
@@ -98,7 +98,7 @@ const WorkoutLogScreen = ({ navigation }) => {
     </View>
   );
 
-  const confirmDeleteWorkout = (workoutIndex) => {
+  const confirmDeleteWorkout = (workoutId) => {
     Alert.alert(
       'Delete Workout',
       'Are you sure you want to delete this workout?',
@@ -110,22 +110,22 @@ const WorkoutLogScreen = ({ navigation }) => {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => deleteWorkout(workoutIndex),
+          onPress: () => deleteWorkout(workoutId),
         },
       ],
       { cancelable: true }
     );
   };
 
-  const deleteWorkout = async (workoutIndex) => {
+  const deleteWorkout = async (workoutId) => {
     try {
-      const workoutToDelete = workoutLog[workoutIndex];
+      const workoutToDelete = workoutLog.find(workout => workout.id === workoutId);
       if (workoutToDelete && workoutToDelete.id && workoutToDelete._version !== undefined) {
         await API.graphql({
           query: deleteWorkoutMutation,
           variables: { input: { id: workoutToDelete.id, _version: workoutToDelete._version } }
         });
-        setWorkoutLog((prevWorkoutLog) => prevWorkoutLog.filter((_, index) => index !== workoutIndex));
+        setWorkoutLog((prevWorkoutLog) => prevWorkoutLog.filter(workout => workout.id !== workoutId));
       }
     } catch (e) {
       console.error('Error deleting workout:', e);
@@ -174,7 +174,7 @@ const WorkoutLogScreen = ({ navigation }) => {
       <FlatList
         data={filteredLog}
         renderItem={renderWorkout}
-        keyExtractor={(item, index) => `${item.date}-${index}`}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={styles.exerciseList}
         showsVerticalScrollIndicator={false}
       />

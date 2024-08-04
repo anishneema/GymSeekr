@@ -1,3 +1,4 @@
+// NearbyGymScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TextInput, TouchableOpacity, Alert, Text, SafeAreaView, StatusBar, Animated } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -15,6 +16,19 @@ const colors = {
   mediumGrey: '#2d4150',
   darkGrey: '#333333',
   lightText: '#666666',
+};
+
+const getDistanceFromLatLonInMeters = (lat1, lon1, lat2, lon2) => {
+  const R = 6371000; // Radius of the earth in meters
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in meters
+  return d;
 };
 
 const NearbyGymScreen = () => {
@@ -50,10 +64,8 @@ const NearbyGymScreen = () => {
   const filterGymsByEquipmentAndRegion = (region) => {
     const filtered = gymData.filter(gym => {
       return gym.equipment.some(eq => eq.toLowerCase().includes(equipmentSearchQuery.toLowerCase())) &&
-        gym.latitude >= region.latitude - region.latitudeDelta / 2 &&
-        gym.latitude <= region.latitude + region.latitudeDelta / 2 &&
-        gym.longitude >= region.longitude - region.longitudeDelta / 2 &&
-        gym.longitude <= region.longitude + region.longitudeDelta / 2;
+        getDistanceFromLatLonInMeters(gym.latitude, gym.longitude, region.latitude, region.longitude) <= (region.latitudeDelta * 111000 / 2) && // Convert latitudeDelta to meters
+        getDistanceFromLatLonInMeters(gym.latitude, gym.longitude, region.latitude, region.longitude) <= (region.longitudeDelta * 111000 / 2); // Convert longitudeDelta to meters
     }).slice(0, 7);
 
     setFilteredGyms(filtered);
@@ -79,15 +91,36 @@ const NearbyGymScreen = () => {
   };
 
   const handleMarkerPress = (gym) => {
-    const gymDetails = gymData.find(g => g.id === gym.id) || {
-      id: gym.id,
-      name: gym.name,
-      address: gym.vicinity,
-      equipment: ['Information not available'],
-      hours: 'Information not available',
-      description: 'Information not available.',
-    };
-    navigation.navigate('GymDetails', { gymId: gym.id });
+    let closestGym = null;
+    let minDistance = Infinity;
+
+    gymData.forEach(dbGym => {
+      const distance = getDistanceFromLatLonInMeters(
+        gym.latitude || gym.geometry?.location?.lat || 0,
+        gym.longitude || gym.geometry?.location?.lng || 0,
+        dbGym.latitude,
+        dbGym.longitude
+      );
+
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestGym = dbGym;
+      }
+    });
+
+    if (closestGym && minDistance <= 300) {
+      navigation.navigate('GymDetails', { gymId: closestGym.id });
+    } else {
+      const fallbackGymDetails = {
+        id: gym.id,
+        name: gym.name,
+        address: gym.vicinity,
+        equipment: ['Information not available'],
+        hours: 'Information not available',
+        description: 'Information not available.',
+      };
+      navigation.navigate('GymDetails', { gymId: fallbackGymDetails.id });
+    }
   };
 
   const handleSearch = () => {
