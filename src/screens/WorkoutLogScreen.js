@@ -55,7 +55,8 @@ const WorkoutLogScreen = ({ navigation }) => {
       });
 
       const workouts = result?.data?.listWorkouts?.items.filter(workout => !workout._deleted) || [];
-      setWorkoutLog(workouts);
+      const sortedWorkouts = workouts.sort((a, b) => new Date(b.date) - new Date(a.date));
+      setWorkoutLog(sortedWorkouts);
     } catch (e) {
       console.error(e);
     }
@@ -141,8 +142,15 @@ const WorkoutLogScreen = ({ navigation }) => {
         workout.exercises.items.some((exercise) => {
           const exerciseName = exercise.name ? exercise.name.toLowerCase() : '';
           const weight = exercise.weight ? exercise.weight.toString().toLowerCase() : '';
+          const sets = exercise.sets ? exercise.sets.toString().toLowerCase() : '';
+          const reps = exercise.reps ? exercise.reps.toString().toLowerCase() : '';
 
-          return exerciseName.includes(searchTextLower) || weight.includes(searchTextLower);
+          return (
+            exerciseName.includes(searchTextLower) ||
+            weight.includes(searchTextLower) ||
+            sets.includes(searchTextLower) ||
+            reps.includes(searchTextLower)
+          );
         }))
     );
   });

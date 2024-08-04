@@ -26,7 +26,7 @@ const ResetScreen = ({ navigation, route }) => {
     }
 
     try {
-      await confirmResetPassword({ username:email, confirmationCode:verificationCode, newPassword });
+      await confirmResetPassword({ username: email, confirmationCode: verificationCode, newPassword });
     } catch (error) {
       console.log(error);
     }
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
   },
-  loginLink: {
+  backLink: {
     color: '#0366d6',
   },
 });

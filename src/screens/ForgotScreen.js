@@ -34,7 +34,7 @@ const ForgotScreen = ({ navigation }) => {
           `Confirmation code was sent to ${codeDeliveryDetails.deliveryMedium}`
         );
         // Collect the confirmation code from the user and pass to confirmResetPassword.
-        Alert.alert(`Confirmation code was sent to ${codeDeliveryDetails.deliveryMedium}`);
+        Alert.alert(`Confirmation code was sent to your email`);
         navigation.navigate('Reset', {username: email, email});
         break;
       case 'DONE':

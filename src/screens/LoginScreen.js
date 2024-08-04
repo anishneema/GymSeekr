@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { signIn} from 'aws-amplify/auth';
-import { signOut} from 'aws-amplify/auth';
+import { signIn, signOut } from 'aws-amplify/auth';
+
 async function handleSignOut() {
   try {
     await signOut();
@@ -14,6 +14,7 @@ async function handleSignOut() {
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   const handleLogin = async () => {
     try {
@@ -30,7 +31,7 @@ const LoginScreen = ({ navigation }) => {
         // Navigate to the VerificationScreen if the user needs to confirm their sign-up
         navigation.navigate('Verification', { username: email });
       } else {
-        Alert.alert('Error', 'Invalid email or password');
+        setError('Invalid email or password');
         console.log('error signing in', error);
       }
     }
@@ -54,12 +55,13 @@ const LoginScreen = ({ navigation }) => {
         autoCapitalize="none"
       />
       <TextInput
-        style={styles.input}
+        style={[styles.input, error ? styles.inputError : null]}
         placeholder="Password"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <TouchableOpacity onPress={() => navigation.navigate('ForgotScreen')}>
         <Text style={styles.link}>Forgot password?</Text>
       </TouchableOpacity>
@@ -99,6 +101,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     marginBottom: 10,
     backgroundColor: '#fff',
+  },
+  inputError: {
+    borderColor: 'red',
+  },
+  errorText: {
+    color: 'red',
+    alignSelf: 'flex-start',
+    marginBottom: 10,
   },
   button: {
     backgroundColor: '#0366d6',

@@ -6,6 +6,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { GOOGLE_MAPS_API_KEY } from '../../config.js';
 import { gymData } from './Database';
 
+const colors = {
+  primary: '#026bd9',
+  secondary: '#4A90E2',
+  background: '#E9F0F7',
+  white: '#FFFFFF',
+  lightGrey: '#D0D8E0',
+  mediumGrey: '#2d4150',
+  darkGrey: '#333333',
+  lightText: '#666666',
+};
+
 const NearbyGymScreen = () => {
   const [gymSearchQuery, setGymSearchQuery] = useState('');
   const [equipmentSearchQuery, setEquipmentSearchQuery] = useState('');
@@ -31,6 +42,21 @@ const NearbyGymScreen = () => {
 
   const handleRegionChange = (region) => {
     setMapRegion(region);
+    if (equipmentSearchQuery.length >= 3) {
+      filterGymsByEquipmentAndRegion(region);
+    }
+  };
+
+  const filterGymsByEquipmentAndRegion = (region) => {
+    const filtered = gymData.filter(gym => {
+      return gym.equipment.some(eq => eq.toLowerCase().includes(equipmentSearchQuery.toLowerCase())) &&
+        gym.latitude >= region.latitude - region.latitudeDelta / 2 &&
+        gym.latitude <= region.latitude + region.latitudeDelta / 2 &&
+        gym.longitude >= region.longitude - region.longitudeDelta / 2 &&
+        gym.longitude <= region.longitude + region.longitudeDelta / 2;
+    }).slice(0, 7);
+
+    setFilteredGyms(filtered);
   };
 
   const fetchNearbyGyms = async () => {
@@ -42,8 +68,8 @@ const NearbyGymScreen = () => {
         `https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=${GOOGLE_MAPS_API_KEY}&location=${centerLocation}&radius=7000&keyword=${searchKeyword}`
       );
       const data = await response.json();
-      setGyms(data.results);
-      setFilteredGyms(data.results);
+      setGyms(data.results.slice(0, 7));
+      setFilteredGyms(data.results.slice(0, 7));
     } catch (error) {
       console.error('Error fetching nearby gyms:', error);
       Alert.alert('Error', 'Failed to fetch nearby gyms. Please try again.');
@@ -53,15 +79,15 @@ const NearbyGymScreen = () => {
   };
 
   const handleMarkerPress = (gym) => {
-    const gymDetails = gymData.find(g => g.name === gym.name) || {
-      id: gym.place_id,
+    const gymDetails = gymData.find(g => g.id === gym.id) || {
+      id: gym.id,
       name: gym.name,
       address: gym.vicinity,
       equipment: ['Information not available'],
       hours: 'Information not available',
-      description: 'No additional information available.',
+      description: 'Information not available.',
     };
-    navigation.navigate('GymDetails', { gym: gymDetails });
+    navigation.navigate('GymDetails', { gymId: gym.id });
   };
 
   const handleSearch = () => {
@@ -78,13 +104,7 @@ const NearbyGymScreen = () => {
 
     fetchNearbyGyms().then(() => {
       if (equipmentSearchQuery.length >= 3) {
-        const filtered = gyms.filter(gym => {
-          const gymDetails = gymData.find(g => g.name === gym.name);
-          return gymDetails ? gymDetails.equipment.some(eq =>
-            eq.toLowerCase().includes(equipmentSearchQuery.toLowerCase())
-          ) : false;
-        });
-        setFilteredGyms(filtered);
+        filterGymsByEquipmentAndRegion(mapRegion);
       }
     });
   };
@@ -97,21 +117,21 @@ const NearbyGymScreen = () => {
       </View>
       <Animated.View style={[styles.searchContainer, { opacity: fadeAnim }]}>
         <View style={styles.searchBox}>
-          <Ionicons name="search" size={24} color="#1E88E5" style={styles.searchIcon} />
+          <Ionicons name="search" size={24} color={colors.primary} style={styles.searchIcon} />
           <TextInput
             style={styles.input}
             placeholder="Search for gyms"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.lightText}
             value={gymSearchQuery}
             onChangeText={setGymSearchQuery}
           />
         </View>
         <View style={styles.searchBox}>
-          <Ionicons name="barbell" size={24} color="#1E88E5" style={styles.searchIcon} />
+          <Ionicons name="barbell" size={24} color={colors.primary} style={styles.searchIcon} />
           <TextInput
             style={styles.input}
             placeholder="Filter by equipment (min 3 chars)"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.lightText}
             value={equipmentSearchQuery}
             onChangeText={setEquipmentSearchQuery}
           />
@@ -130,14 +150,14 @@ const NearbyGymScreen = () => {
           <Marker
             key={index}
             coordinate={{
-              latitude: gym.location?.lat || 0,
-              longitude: gym.location?.lng || 0,
+              latitude: gym.latitude || gym.geometry?.location?.lat || 0,
+              longitude: gym.longitude || gym.geometry?.location?.lng || 0,
             }}
             title={gym.name}
             onPress={() => handleMarkerPress(gym)}
           >
             <View style={styles.markerContainer}>
-              <Ionicons name="fitness" size={24} color="#1E88E5" />
+              <Ionicons name="fitness" size={24} color={colors.primary} />
             </View>
           </Marker>
         ))}
@@ -147,7 +167,7 @@ const NearbyGymScreen = () => {
       </View>
       {isLoading && (
         <View style={styles.loadingOverlay}>
-          <Ionicons name="fitness" size={50} color="#FFF" />
+          <Ionicons name="fitness" size={50} color={colors.white} />
           <Text style={styles.loadingText}>Searching for gyms...</Text>
         </View>
       )}
@@ -158,23 +178,23 @@ const NearbyGymScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: '#1E88E5',
+    backgroundColor: colors.primary,
     padding: 20,
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#FFF',
+    color: colors.white,
   },
   searchContainer: {
     padding: 15,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: colors.lightGrey,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -187,12 +207,12 @@ const styles = StyleSheet.create({
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0F0F0',
+    backgroundColor: colors.background,
     borderRadius: 10,
     marginBottom: 10,
     paddingHorizontal: 10,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: colors.lightGrey,
   },
   searchIcon: {
     marginRight: 10,
@@ -201,17 +221,17 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 50,
     fontSize: 16,
-    color: '#333',
+    color: colors.darkGrey,
   },
   searchButton: {
-    backgroundColor: '#1E88E5',
+    backgroundColor: colors.primary,
     borderRadius: 10,
     padding: 15,
     alignItems: 'center',
     marginTop: 10,
   },
   searchButtonText: {
-    color: '#FFF',
+    color: colors.white,
     fontWeight: 'bold',
     fontSize: 18,
   },
@@ -219,35 +239,37 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   markerContainer: {
-    backgroundColor: '#FFF',
+    backgroundColor: colors.white,
     borderRadius: 20,
     padding: 8,
     borderWidth: 2,
-    borderColor: '#1E88E5',
+    borderColor: colors.primary,
   },
   footer: {
-    backgroundColor: '#FFF',
+    backgroundColor: colors.white,
     padding: 15,
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    borderTopColor: colors.lightGrey,
   },
   footerText: {
     fontSize: 16,
-    color: '#555',
-    fontWeight: '600',
+    color: colors.mediumGrey,
   },
   loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(30, 136, 229, 0.8)',
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
-    color: '#FFF',
+    color: colors.white,
     fontSize: 18,
     marginTop: 10,
-    fontWeight: 'bold',
   },
 });
 

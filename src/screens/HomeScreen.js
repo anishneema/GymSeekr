@@ -332,13 +332,14 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   quoteContainer: {
-    marginTop: 75,
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 10,
-    alignItems: 'center',
   },
   quoteText: {
-    fontSize: 30,
+    fontSize: 24,
     fontStyle: 'italic',
     color: colors.primary,
     textAlign: 'center',
@@ -422,9 +423,6 @@ const styles = StyleSheet.create({
   detailsText: {
     fontSize: 14,
     color: colors.mediumGrey,
-  },
-  exerciseBox: {
-    backgroundColor: '#FFFFFF',
   },
   noExercisesText: {
     fontSize: 16,

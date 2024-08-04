@@ -58,7 +58,6 @@ const WorkoutTrackerScreen = ({ navigation }) => {
   const [newWeight, setNewWeight] = useState('');
   const [userEmail, setUserEmail] = useState(null);
   const [workoutDate, setWorkoutDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const timeoutRef = useRef(null);
 
@@ -203,15 +202,10 @@ const WorkoutTrackerScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
-  const handleDatePress = () => {
-    setShowDatePicker(true);
-  };
-
   const handleDateChange = (event, selectedDate) => {
     if (selectedDate) {
       setWorkoutDate(selectedDate);
     }
-    setShowDatePicker(false); // Always close the picker
   };
 
   const handleSuggestionClick = (exercise) => {
@@ -240,10 +234,7 @@ const WorkoutTrackerScreen = ({ navigation }) => {
           <Text style={styles.heading}>Workout Tracker</Text>
         </View>
         <View style={styles.datePickerContainer}>
-          <TouchableOpacity onPress={handleDatePress}>
-            <Text style={styles.dateText}>Date: {workoutDate.toLocaleDateString()}</Text>
-          </TouchableOpacity>
-          {showDatePicker && (
+          {(
             <DateTimePicker
               style={styles.datePicker}
               value={workoutDate}
