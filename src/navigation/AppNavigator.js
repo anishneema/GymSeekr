@@ -51,7 +51,7 @@ const NearbyGymsStack = () => (
     <Stack.Screen 
       name="GymDetails" 
       component={GymDetailsScreen}
-      options={{ title: 'Gym Details' }}
+      options={{headerShown: false }}
     />
   </Stack.Navigator>
 );

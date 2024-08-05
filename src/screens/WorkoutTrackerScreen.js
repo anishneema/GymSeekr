@@ -149,21 +149,21 @@ const WorkoutTrackerScreen = ({ navigation }) => {
     );
   };
 
-  const confirmDeleteExercise = (rowKey) => {
+  const confirmDeleteExercise = (rowKey, rowMap) => {
     Alert.alert(
       'Delete Exercise',
       'Are you sure you want to delete this exercise?',
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => deleteExercise(rowKey) },
+        { text: 'Cancel', style: 'cancel', onPress: () => rowMap[rowKey] && rowMap[rowKey].closeRow() },
+        { text: 'Delete', style: 'destructive', onPress: () => deleteExercise(rowKey, rowMap) },
       ],
       { cancelable: true }
     );
   };
 
-  const deleteExercise = async (rowKey) => {
+  const deleteExercise = async (rowKey, rowMap) => {
     const exerciseToDelete = exercises[rowKey];
-    
+
     if (exerciseToDelete && exerciseToDelete.id && exerciseToDelete._version !== undefined) {
       try {
         await API.graphql({
@@ -171,12 +171,20 @@ const WorkoutTrackerScreen = ({ navigation }) => {
           variables: { input: { id: exerciseToDelete.id, _version: exerciseToDelete._version } }
         });
 
-        setExercises((prevExercises) => prevExercises.filter((_, index) => index !== rowKey));
+        const newData = [...exercises];
+        newData.splice(rowKey, 1);
+        setExercises(newData);
       } catch (e) {
         console.error('Error deleting exercise:', e);
       }
     } else {
-      setExercises((prevExercises) => prevExercises.filter((_, index) => index !== rowKey));
+      const newData = [...exercises];
+      newData.splice(rowKey, 1);
+      setExercises(newData);
+    }
+
+    if (rowMap[rowKey]) {
+      rowMap[rowKey].closeRow();
     }
   };
 
@@ -190,14 +198,14 @@ const WorkoutTrackerScreen = ({ navigation }) => {
   );
 
   const renderHiddenItem = (data, rowMap) => (
-    <TouchableOpacity
-      style={styles.rowBack}
-      onPress={() => confirmDeleteExercise(data.index)}
-    >
-      <View style={styles.backRightBtn}>
+    <View style={styles.rowBack}>
+      <TouchableOpacity
+        style={styles.backRightBtn}
+        onPress={() => confirmDeleteExercise(data.index, rowMap)}
+      >
         <Ionicons name="trash-outline" size={24} color={colors.white} />
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </View>
   );
 
   const handleDateChange = (event, selectedDate) => {
@@ -329,12 +337,7 @@ const WorkoutTrackerScreen = ({ navigation }) => {
           rightOpenValue={-75}
           disableRightSwipe
           onRowOpen={(rowKey, rowMap) => {
-            setTimeout(() => {
-              rowMap[rowKey].closeRow();
-            }, 2000);
-          }}
-          onRowDidOpen={(rowKey) => {
-            confirmDeleteExercise(rowKey);
+            confirmDeleteExercise(rowKey, rowMap);
           }}
           style={styles.swipeListView}
         />

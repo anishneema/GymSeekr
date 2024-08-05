@@ -16,8 +16,9 @@ export const gymData = [
     equipment: ['Barbells', 'Squat Racks', 'Benches', 'Adjustable Benches', 'Dumbbells', 'Cardio Equipment'],
     hours: 'Mon-Sun: 24 hours',
     description: 'This is a test.',
-    latitude: 37.6943,
-    longitude: -121.9021,
+    latitude: 37.69800903153124,
+    longitude: -121.8989877904154,
+
   },
   {
     id: '3',
@@ -26,8 +27,8 @@ export const gymData = [
     equipment: ['Barbells', 'Squat Racks', 'Benches', 'Adjustable Benches', 'Dumbbells', 'Cardio Equipment'],
     hours: 'Mon-Sun: 24 hours',
     description: 'San Ramon 24.',
-    latitude: 37.7738,
-    longitude: -121.9576,
+    latitude: 37.7740072,
+    longitude: -121.9721244,
   },
   {
     id: '4',

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { signIn, signOut } from 'aws-amplify/auth';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 async function handleSignOut() {
   try {
@@ -14,6 +15,7 @@ async function handleSignOut() {
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
   const handleLogin = async () => {
@@ -54,13 +56,18 @@ const LoginScreen = ({ navigation }) => {
         onChangeText={setEmail}
         autoCapitalize="none"
       />
-      <TextInput
-        style={[styles.input, error ? styles.inputError : null]}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+      <View style={[styles.input, error ? styles.inputError : null, styles.passwordContainer]}>
+        <TextInput
+          style={styles.passwordInput}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!showPassword}
+        />
+        <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+          <Icon name={showPassword ? 'eye' : 'eye-slash'} size={20} color="gray" />
+        </TouchableOpacity>
+      </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <TouchableOpacity onPress={() => navigation.navigate('ForgotScreen')}>
         <Text style={styles.link}>Forgot password?</Text>
@@ -101,6 +108,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     marginBottom: 10,
     backgroundColor: '#fff',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  passwordContainer: {
+    position: 'relative',
+  },
+  passwordInput: {
+    flex: 1,
   },
   inputError: {
     borderColor: 'red',
@@ -109,6 +124,9 @@ const styles = StyleSheet.create({
     color: 'red',
     alignSelf: 'flex-start',
     marginBottom: 10,
+  },
+  eyeIcon: {
+    paddingHorizontal: 10,
   },
   button: {
     backgroundColor: '#0366d6',
