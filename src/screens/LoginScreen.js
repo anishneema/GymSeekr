@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet,ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { signIn, signOut } from 'aws-amplify/auth';
+import { signIn, signOut, getCurrentUser } from 'aws-amplify/auth';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 async function handleSignOut() {
@@ -17,6 +17,31 @@ const LoginScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    console.log('useEffect called'); // Debug log
+    const checkUser = async () => {
+      try {
+        console.log('useEffect called -check user - auth'); // Debug log
+        const user = await getCurrentUser();
+        console.log("whos is --"+user.signInDetails.loginId);
+        if (user.signInDetails.loginId) {
+          await AsyncStorage.setItem('userEmail', user.signInDetails.loginId);
+          navigateToMain();
+        }
+      } catch (err) {
+        console.log('useEffect called -check user - auth - problem'); // Debug log
+        console.log(err);
+        //navigation.navigate('Login'); // Replace 'Login' with your login screen name
+      } finally {
+        setLoading(false);
+      }
+    };
+    console.log('useEffect called -check user -1 '); // Debug log
+    checkUser();
+    console.log('useEffect called -check user -2'); // Debug log
+  }, []);
 
   const handleLogin = async () => {
     try {
@@ -45,6 +70,15 @@ const LoginScreen = ({ navigation }) => {
       routes: [{ name: 'Main' }],
     });
   }
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
 
   return (
     <View style={styles.container}>

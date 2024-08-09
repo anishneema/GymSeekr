@@ -1,11 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TextInput, TouchableOpacity, Alert, Text, SafeAreaView, StatusBar, Animated } from 'react-native';
+import { View, StyleSheet, TextInput, TouchableOpacity, Alert, Text, SafeAreaView, StatusBar, Animated, Platform } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { GOOGLE_MAPS_API_KEY } from '../../config.js';
 import { gymData } from './Database';
+
+var GOOGLE_MAPS_API_KEY = "";
+
+if(Platform.OS=='android'){
+  GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_ANDROID_GOOGLE_MAP_API_KEY;
+} 
+
+if( Platform.OS=='ios'){
+  GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_IOS_GOOGLE_MAP_API_KEY;
+}
 
 const colors = {
   primary: '#026bd9',

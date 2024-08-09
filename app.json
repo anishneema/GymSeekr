@@ -1,12 +1,14 @@
 {
   "expo": {
-    "name": "PowerliftingApp",
-    "slug": "PowerliftingApp",
+    "name": "GymSeekr",
+    "slug": "GymSeekr",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "plugins":["react-native-map-link"],
+    "plugins": [
+      "react-native-map-link"
+    ],
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -14,9 +16,9 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.aneema.powerliftingapp",
+      "bundleIdentifier": "JR66H6LAVK.com.aneema.GymSeekr",
       "config": {
-        "googleMapsApiKey": "GOOGLE_MAPS_API_KEY"
+        "googleMapsApiKey": ""
       }
     },
     "android": {
@@ -24,10 +26,20 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anish_neema.PowerliftingApp"
+     "package": "com.anish_neema.GymSeekr",
+     "config": {
+       "googleMaps": {
+         "apiKey": ""
+        }
+    }
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4b7c4252-24f6-47f8-97fa-1d862e337822"
+      }
     }
   }
 }
