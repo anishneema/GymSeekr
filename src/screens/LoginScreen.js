@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback,useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import { signIn, signOut,getCurrentUser } from 'aws-amplify/auth';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 const LoginScreen = ({ navigation }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const emailRef = useRef('');
+  const passwordRef = useRef('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -40,12 +40,13 @@ const LoginScreen = ({ navigation }) => {
   const handleLogin = useCallback(async () => {
     setLoading(true);
     try {
-      await signIn({ username: email, password });
-      await EncryptedStorage.setItem('userEmail', email);
+      await signIn({ username: emailRef.current, password:passwordRef.current });
+      await EncryptedStorage.setItem('userEmail', emailRef.current);
       navigateToMain();
+      setIsLoggedIn(true);
     } catch (error) {
       if (error.code === 'UserNotConfirmedException') {
-        navigation.navigate('Verification', { username: email });
+        navigation.navigate('Verification', { username: emailRef.current });
       } else {
         setError('Invalid email or password');
         console.error('Error signing in', error);
@@ -53,7 +54,7 @@ const LoginScreen = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  }, [email, password, navigation]);
+  }, [emailRef.current, passwordRef.current, navigation]);
 
   const navigateToMain = useCallback(() => {
     navigation.reset({
@@ -62,8 +63,9 @@ const LoginScreen = ({ navigation }) => {
     });
   }, [navigation]);
 
-  const handleEmailChange = useCallback((text) => setEmail(text), []);
-  const handlePasswordChange = useCallback((text) => setPassword(text), []);
+  const handleEmailChange = useCallback((text) => { emailRef.current = text;}, []);
+  const handlePasswordChange = useCallback((text) => { passwordRef.current = text;}, []);
+  const toggleShowPassword = useCallback(() => setShowPassword(prev => !prev), []);
 
   if (loading) {
     return (
@@ -73,16 +75,16 @@ const LoginScreen = ({ navigation }) => {
     );
   }
 
-  if (isLoggedIn) {
+  if (isLoggedIn || loading) {
     return null; // Render nothing if the user is already logged in
   }
-
+  console.log("returning login screen");
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Welcome to GymSeekr</Text>
       <TextInput
         style={styles.input}
-        value={email}
+        defaultValue={emailRef.current}
         onChangeText={handleEmailChange}
         placeholder="Email address"
         autoCapitalize="none"
@@ -91,14 +93,14 @@ const LoginScreen = ({ navigation }) => {
       <View style={[styles.passwordContainer, error ? styles.inputError : null]}>
         <TextInput
           style={styles.passwordInput}
-          value={password}
+          defaultValue={passwordRef.current}
           onChangeText={handlePasswordChange}
           placeholder="Password"
           secureTextEntry={!showPassword}
           autoCapitalize="none"
           accessibilityLabel="Password input"
         />
-        <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+        <TouchableOpacity onPress={toggleShowPassword} style={styles.eyeIcon}>
           <Icon name={showPassword ? 'eye' : 'eye-slash'} size={20} color="gray" />
         </TouchableOpacity>
       </View>

@@ -5,13 +5,13 @@ import { useNavigation } from '@react-navigation/native';
 import { gymData } from './Database';
 
 const colors = {
-  primary: '#026bd9',
-  secondary: '#4A90E2',
-  background: '#E9F0F7',
-  white: '#FFFFFF',
-  lightGrey: '#D0D8E0',
-  mediumGrey: '#2d4150',
-  darkGrey: '#333333',
+  primary: '#026bd9', // Steel Blue
+  secondary: '#4A90E2', // Dodger Blue
+  background: '#E9F0F7', // Light blue-grey background
+  white: '#FFFFFF', // White
+  lightGrey: '#D0D8E0', // Light grey
+  mediumGrey: '#2d4150', // Medium grey
+  darkGrey: '#333333', // Dark grey
 };
 
 const GymDetailsScreen = ({ route }) => {
@@ -26,9 +26,9 @@ const GymDetailsScreen = ({ route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <View style={styles.headerContainer}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={colors.primary} />
+          <Ionicons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Gym Details</Text>
       </View>
@@ -63,7 +63,7 @@ const GymDetailsScreen = ({ route }) => {
           </>
         ) : (
           <View style={styles.notFoundContainer}>
-            <Text style={styles.notFoundText}>This gym is in not our database. If you would like to add this gym, please contact gymseekr@gmail.com. We are always looking to expand our database!</Text>
+            <Text style={styles.notFoundText}>This gym is not in our database. If you would like to add this gym, please contact gymseekr@gmail.com. We are always looking to expand our database!</Text>
           </View>
         )}
       </ScrollView>
@@ -76,18 +76,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    padding: 15,
+  headerContainer: {
+    backgroundColor: colors.primary,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: colors.lightGrey,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
     elevation: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   backButton: {
     marginRight: 10,
@@ -95,7 +92,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: colors.primary,
+    color: colors.white,
   },
   scrollViewContent: {
     padding: 15,
@@ -156,12 +153,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
   },
   notFoundText: {
     fontSize: 18,
     color: colors.primary,
     textAlign: 'center',
-    padding: 20,
   },
 });
 
