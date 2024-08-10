@@ -1,16 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet,ActivityIndicator } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { signIn, signOut, getCurrentUser } from 'aws-amplify/auth';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import EncryptedStorage from 'react-native-encrypted-storage';
+import { signIn, signOut,getCurrentUser } from 'aws-amplify/auth';
 import Icon from 'react-native-vector-icons/FontAwesome';
-
-async function handleSignOut() {
-  try {
-    await signOut();
-  } catch (error) {
-    console.log('error signing out: ', error);
-  }
-}
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -18,85 +10,93 @@ const LoginScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    console.log('useEffect called'); // Debug log
     const checkUser = async () => {
       try {
-        console.log('useEffect called -check user - auth'); // Debug log
         const user = await getCurrentUser();
-        console.log("whos is --"+user.signInDetails.loginId);
-        if (user.signInDetails.loginId) {
-          await AsyncStorage.setItem('userEmail', user.signInDetails.loginId);
+        if (user?.signInDetails?.loginId) {
+          await EncryptedStorage.setItem("userEmail", user.signInDetails.loginId);
+          setIsLoggedIn(true);
           navigateToMain();
         }
       } catch (err) {
-        console.log('useEffect called -check user - auth - problem'); // Debug log
-        console.log(err);
-        //navigation.navigate('Login'); // Replace 'Login' with your login screen name
+        if (err.name === 'UserUnAuthenticatedException') {
+          // Silently ignore the exception
+        } else if (err.name === 'UserAlreadyAuthenticatedException'){
+                await signOut();
+        } else {
+          console.error('Error checking user: ', err);
+        }
       } finally {
         setLoading(false);
       }
     };
-    console.log('useEffect called -check user -1 '); // Debug log
     checkUser();
-    console.log('useEffect called -check user -2'); // Debug log
-  }, []);
+  }, [navigation]);
 
-  const handleLogin = async () => {
+
+  const handleLogin = useCallback(async () => {
+    setLoading(true);
     try {
-      await signOut(); // Ensure any existing user is signed out
       await signIn({ username: email, password });
-      
-      // Store the email as a simple identifier (not secure, just for demonstration)
-      await AsyncStorage.setItem('userEmail', email);
-
-      // Reset the navigation stack and navigate to the 'Main' screen
+      await EncryptedStorage.setItem('userEmail', email);
       navigateToMain();
     } catch (error) {
       if (error.code === 'UserNotConfirmedException') {
-        // Navigate to the VerificationScreen if the user needs to confirm their sign-up
         navigation.navigate('Verification', { username: email });
       } else {
         setError('Invalid email or password');
-        console.log('error signing in', error);
+        console.error('Error signing in', error);
       }
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [email, password, navigation]);
 
-  function navigateToMain() {
+  const navigateToMain = useCallback(() => {
     navigation.reset({
       index: 0,
       routes: [{ name: 'Main' }],
     });
-  }
+  }, [navigation]);
+
+  const handleEmailChange = useCallback((text) => setEmail(text), []);
+  const handlePasswordChange = useCallback((text) => setPassword(text), []);
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0000ff" />
       </View>
     );
   }
 
+  if (isLoggedIn) {
+    return null; // Render nothing if the user is already logged in
+  }
 
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Welcome to GymSeekr</Text>
       <TextInput
         style={styles.input}
-        placeholder="Email address"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={handleEmailChange}
+        placeholder="Email address"
         autoCapitalize="none"
+        accessibilityLabel="Email address input"
       />
-      <View style={[styles.input, error ? styles.inputError : null, styles.passwordContainer]}>
+      <View style={[styles.passwordContainer, error ? styles.inputError : null]}>
         <TextInput
           style={styles.passwordInput}
-          placeholder="Password"
           value={password}
-          onChangeText={setPassword}
+          onChangeText={handlePasswordChange}
+          placeholder="Password"
           secureTextEntry={!showPassword}
+          autoCapitalize="none"
+          accessibilityLabel="Password input"
         />
         <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
           <Icon name={showPassword ? 'eye' : 'eye-slash'} size={20} color="gray" />
@@ -142,14 +142,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     marginBottom: 10,
     backgroundColor: '#fff',
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   passwordContainer: {
-    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#d1d5da',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    backgroundColor: '#fff',
+    marginBottom: 10,
   },
   passwordInput: {
     flex: 1,
+    height: 40,
+  },
+  eyeIcon: {
+    paddingHorizontal: 10,
   },
   inputError: {
     borderColor: 'red',
@@ -158,9 +168,6 @@ const styles = StyleSheet.create({
     color: 'red',
     alignSelf: 'flex-start',
     marginBottom: 10,
-  },
-  eyeIcon: {
-    paddingHorizontal: 10,
   },
   button: {
     backgroundColor: '#0366d6',
@@ -191,6 +198,11 @@ const styles = StyleSheet.create({
   },
   registerLink: {
     color: '#0366d6',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

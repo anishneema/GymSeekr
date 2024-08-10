@@ -1,9 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
 import { signOut } from 'aws-amplify/auth';
 import { Ionicons } from '@expo/vector-icons';
+import EncryptedStorage from 'react-native-encrypted-storage';
 
 const colors = {
   primary: '#026bd9', // Steel Blue
@@ -15,14 +14,6 @@ const colors = {
   darkGrey: '#333333', // Dark grey
   lightText: '#666666', // Light grey text
 };
-
-async function handleSignOut() {
-  try {
-    await signOut();
-  } catch (error) {
-    console.log('error signing out: ', error);
-  }
-}
 
 const SettingsScreen = ({ navigation }) => {
   const handleLogout = () => {
@@ -38,11 +29,8 @@ const SettingsScreen = ({ navigation }) => {
           text: 'Log Out',
           onPress: async () => {
             try {
-              // Sign out the user
               await signOut();
-              // Remove the userEmail key from AsyncStorage
-              await AsyncStorage.removeItem('userEmail');
-              // Navigate to the Login screen
+              await EncryptedStorage.removeItem('userEmail');
               navigation.reset({
                 index: 0,
                 routes: [{ name: 'Login' }],
@@ -58,23 +46,6 @@ const SettingsScreen = ({ navigation }) => {
     );
   };
 
-  const handleClearAsyncStorage = async () => {
-    try {
-      const directoryInfo = await FileSystem.getInfoAsync(FileSystem.documentDirectory + 'RCTAsyncLocalStorage');
-      if (!directoryInfo.exists) {
-        Alert.alert('Error', 'Async Storage directory not found');
-        return;
-      }
-
-      // Clear the async storage if the directory exists
-      await AsyncStorage.clear();
-      Alert.alert('Success', 'Async Storage Cleared Successfully');
-    } catch (error) {
-      console.error('Error clearing async storage:', error);
-      Alert.alert('Error', 'Failed to clear async storage');
-    }
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.headerStripe} />
@@ -87,10 +58,6 @@ const SettingsScreen = ({ navigation }) => {
         </View>
       </View>
       <View style={styles.contentContainer}>
-        <TouchableOpacity style={styles.button} onPress={handleClearAsyncStorage}>
-          <Ionicons name="trash-outline" size={24} color="#fff" style={styles.buttonIcon} />
-          <Text style={styles.buttonText}>Clear Async Storage</Text>
-        </TouchableOpacity>
         <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={24} color="#fff" style={styles.buttonIcon} />
           <Text style={styles.buttonText}>Log Out</Text>

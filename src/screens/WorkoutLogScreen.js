@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, Alert, SafeAreaView, StatusBar } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import EncryptedStorage from 'react-native-encrypted-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { listWorkouts } from '../graphql/queries';
 import { generateClient } from "aws-amplify/api";
@@ -26,7 +26,7 @@ const WorkoutLogScreen = ({ navigation }) => {
   useEffect(() => {
     const loadUserEmailAndLog = async () => {
       try {
-        const email = await AsyncStorage.getItem('userEmail');
+        const email = await EncryptedStorage.getItem('userEmail');
         if (email) {
           setUserEmail(email);
           loadWorkoutLog(email);

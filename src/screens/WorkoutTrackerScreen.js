@@ -4,7 +4,7 @@ import {
   KeyboardAvoidingView, Platform
 } from 'react-native';
 import { SwipeListView } from 'react-native-swipe-list-view';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import EncryptedStorage from 'react-native-encrypted-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { listWorkouts } from '../graphql/queries';
 import { createWorkout, createExercise } from '../graphql/mutations';
@@ -64,7 +64,7 @@ const WorkoutTrackerScreen = ({ navigation }) => {
   useEffect(() => {
     const loadUserEmail = async () => {
       try {
-        const email = await AsyncStorage.getItem('userEmail');
+        const email = await EncryptedStorage.getItem('userEmail');
         if (email) {
           setUserEmail(email);
         }

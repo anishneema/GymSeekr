@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Modal, ScrollView, SafeAreaView, StatusBar, Share } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import EncryptedStorage from 'react-native-encrypted-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { listWorkouts } from '../graphql/queries';
@@ -40,7 +40,7 @@ const HomeScreen = ({ navigation }) => {
   useEffect(() => {
     const loadUserEmail = async () => {
       try {
-        const email = await AsyncStorage.getItem('userEmail');
+        const email = await EncryptedStorage.getItem('userEmail');
         if (email) {
           setUserEmail(email);
         }
@@ -84,7 +84,7 @@ const HomeScreen = ({ navigation }) => {
       });
 
       const workouts = result?.data?.listWorkouts?.items.filter(workout => !workout._deleted) || [];
-      console.log('Fetched workouts:', workouts);
+      //console.log('Fetched workouts:', workouts);
       setWorkoutLog(workouts);
       updateMarkedDates(workouts);
     } catch (e) {
@@ -116,7 +116,7 @@ const HomeScreen = ({ navigation }) => {
       });
 
       const workouts = result?.data?.listWorkouts?.items.filter(workout => !workout._deleted) || [];
-      console.log('Fetched weekly workouts:', workouts);
+      //console.log('Fetched weekly workouts:', workouts);
       setWeeklyWorkouts(workouts);
     } catch (e) {
       console.error('Error loading weekly workouts:', e);
@@ -142,7 +142,6 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const handleDatePress = (date) => {
-    const selectedDate = new Date(Date.UTC(date.year, date.month - 1, date.day)).toISOString();
     const workoutsForSelectedDate = workoutLog.filter((workout) => {
       const workoutDate = new Date(workout.date);
       return (
@@ -151,7 +150,7 @@ const HomeScreen = ({ navigation }) => {
         workoutDate.getDate() === date.day
       );
     });
-    console.log('Workouts for selected date:', workoutsForSelectedDate);
+    //console.log('Workouts for selected date:', workoutsForSelectedDate);
     if (workoutsForSelectedDate.length > 0) {
       setSelectedWorkout(workoutsForSelectedDate);
       setShowModal(true);
