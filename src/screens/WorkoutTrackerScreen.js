@@ -6,7 +6,6 @@ import {
 import { SwipeListView } from 'react-native-swipe-list-view';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { listWorkouts } from '../graphql/queries';
 import { createWorkout, createExercise } from '../graphql/mutations';
 import { deleteExercise as deleteExerciseMutation } from '../graphql/mutations';
 import { generateClient } from "aws-amplify/api";
@@ -106,10 +105,11 @@ const WorkoutTrackerScreen = ({ navigation }) => {
   };
 
   const saveWorkout = async () => {
+ 
     if (exercises.length > 0 && userEmail) {
       const workout = {
         date: workoutDate.toISOString(), // Use the selected workoutDate
-        owner: userEmail,
+        userEmail: userEmail
       };
 
       try {
@@ -120,12 +120,11 @@ const WorkoutTrackerScreen = ({ navigation }) => {
         });
 
         const workoutId = result.data.createWorkout.id;
-
         // Save each exercise and associate it with the workout
         for (const exercise of exercises) {
           await API.graphql({
             query: createExercise,
-            variables: { input: { ...exercise, date: workoutDate.toISOString(), owner: userEmail, workoutID: workoutId } }
+            variables: { input: { ...exercise, date: workoutDate.toISOString(), userEmail: userEmail,workoutID: workoutId }}
           });
         }
 

@@ -2,40 +2,12 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { signUp } from 'aws-amplify/auth';
 
-async function handleSignUp({email, password }) {
-  const [isSignUpComplete, setIsSignUpComplete] = useState('');
-  const [userId, setUserId] = useState('');
-  const [nextStep, setNextStep] = useState('');
-  try {
-    const { isSignUpComplete, userId, nextStep } = await signUp({
-      username:email,
-      password,
-      options: {
-        userAttributes: {
-          email
-         // phone_number // E.164 number convention
-        },
-        // optional
-        autoSignIn: false // or SignInOptions e.g { authFlowType: "USER_SRP_AUTH" }
-      }
-    });
-
-    console.log(userId);
-    
-  } catch (error) {
-    console.log('error signing up:', error);
-  }
-   return isSignUpComplete, userId, nextStep;
-}
-
 const RegistrationScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSignUpComplete, setIsSignUpComplete] = useState(false);
-  const [userId, setUserId] = useState('');
-  const [nextStep, setNextStep] = useState('');
+
 
   const handleSignUp = async () => {
     try {
@@ -45,7 +17,7 @@ const RegistrationScreen = ({ navigation }) => {
         options: {
           userAttributes: {
             email,
-            'preferred_username': username // Add the preferred_username attribute
+            'preferred_username': email // Add the preferred_username attribute
             // phone_number // E.164 number convention
           },
           // optional
@@ -54,18 +26,27 @@ const RegistrationScreen = ({ navigation }) => {
       });
   
       setIsSignUpComplete(result.isSignUpComplete);
-      setUserId(result.userId);
-      setNextStep(result.nextStep);
-  
-      console.log(userId);
+
+      if(!isSignUpComplete){
+        navigation.navigate('Verification', { email });
+      }else{
+      // Navigate to the login screen after successful sign-up
+        navigation.navigate('Login');
+      }
+
+
     } catch (error) {
+      if (error.name === 'UsernameExistsException'){
+        Alert.alert('Error', error.message);
+        navigation.navigate('Login');
+      }
       console.log('error signing up:', error);
     }
   };
 
   const handleRegistration = async () => {
     // Check if all fields are filled
-    if (!email || !username || !password || !confirmPassword) {
+    if (!email || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -90,16 +71,7 @@ const RegistrationScreen = ({ navigation }) => {
     }
 
     // Perform registration logic here (e.g., API call to create a new user)
-    await handleSignUp();
-    console.log(isSignUpComplete);
-    console.log(nextStep);
-    console.log(userId);
-    if(!isSignUpComplete){
-      navigation.navigate('Verification', {username, email });
-    }else{
-    // Navigate to the login screen after successful sign-up
-      navigation.navigate('Login');
-    }
+    handleSignUp();
   };
 
 
@@ -112,12 +84,6 @@ const RegistrationScreen = ({ navigation }) => {
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Username"
-        value={username}
-        onChangeText={setUsername}
       />
       <TextInput
         style={styles.input}

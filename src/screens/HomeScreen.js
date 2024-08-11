@@ -73,7 +73,6 @@ const HomeScreen = ({ navigation }) => {
     try {
       const filter = {
         and: [
-          { owner: { eq: userEmail } },
           { date: { between: [startOfMonth, endOfMonth] } }
         ]
       };
@@ -84,7 +83,7 @@ const HomeScreen = ({ navigation }) => {
       });
 
       const workouts = result?.data?.listWorkouts?.items.filter(workout => !workout._deleted) || [];
-      //console.log('Fetched workouts:', workouts);
+     // console.log('Fetched workouts:', workouts);
       setWorkoutLog(workouts);
       updateMarkedDates(workouts);
     } catch (e) {
@@ -105,7 +104,6 @@ const HomeScreen = ({ navigation }) => {
     try {
       const filter = {
         and: [
-          { owner: { eq: userEmail } },
           { date: { between: [startOfWeek.toISOString(), endOfWeek.toISOString()] } }
         ]
       };

@@ -2,11 +2,15 @@
 // this is an auto generated file. This will be overwritten
 
 export const onCreateWorkout = /* GraphQL */ `
-  subscription OnCreateWorkout($filter: ModelSubscriptionWorkoutFilterInput) {
-    onCreateWorkout(filter: $filter) {
+  subscription OnCreateWorkout(
+    $filter: ModelSubscriptionWorkoutFilterInput
+    $owner: String
+  ) {
+    onCreateWorkout(filter: $filter, owner: $owner) {
       id
       date
       owner
+      userEmail
       exercises {
         nextToken
         startedAt
@@ -22,11 +26,15 @@ export const onCreateWorkout = /* GraphQL */ `
   }
 `;
 export const onUpdateWorkout = /* GraphQL */ `
-  subscription OnUpdateWorkout($filter: ModelSubscriptionWorkoutFilterInput) {
-    onUpdateWorkout(filter: $filter) {
+  subscription OnUpdateWorkout(
+    $filter: ModelSubscriptionWorkoutFilterInput
+    $owner: String
+  ) {
+    onUpdateWorkout(filter: $filter, owner: $owner) {
       id
       date
       owner
+      userEmail
       exercises {
         nextToken
         startedAt
@@ -42,11 +50,15 @@ export const onUpdateWorkout = /* GraphQL */ `
   }
 `;
 export const onDeleteWorkout = /* GraphQL */ `
-  subscription OnDeleteWorkout($filter: ModelSubscriptionWorkoutFilterInput) {
-    onDeleteWorkout(filter: $filter) {
+  subscription OnDeleteWorkout(
+    $filter: ModelSubscriptionWorkoutFilterInput
+    $owner: String
+  ) {
+    onDeleteWorkout(filter: $filter, owner: $owner) {
       id
       date
       owner
+      userEmail
       exercises {
         nextToken
         startedAt
@@ -62,8 +74,11 @@ export const onDeleteWorkout = /* GraphQL */ `
   }
 `;
 export const onCreateExercise = /* GraphQL */ `
-  subscription OnCreateExercise($filter: ModelSubscriptionExerciseFilterInput) {
-    onCreateExercise(filter: $filter) {
+  subscription OnCreateExercise(
+    $filter: ModelSubscriptionExerciseFilterInput
+    $owner: String
+  ) {
+    onCreateExercise(filter: $filter, owner: $owner) {
       id
       name
       sets
@@ -71,11 +86,13 @@ export const onCreateExercise = /* GraphQL */ `
       weight
       date
       owner
+      userEmail
       workoutID
       workout {
         id
         date
         owner
+        userEmail
         createdAt
         updatedAt
         _version
@@ -93,8 +110,11 @@ export const onCreateExercise = /* GraphQL */ `
   }
 `;
 export const onUpdateExercise = /* GraphQL */ `
-  subscription OnUpdateExercise($filter: ModelSubscriptionExerciseFilterInput) {
-    onUpdateExercise(filter: $filter) {
+  subscription OnUpdateExercise(
+    $filter: ModelSubscriptionExerciseFilterInput
+    $owner: String
+  ) {
+    onUpdateExercise(filter: $filter, owner: $owner) {
       id
       name
       sets
@@ -102,11 +122,13 @@ export const onUpdateExercise = /* GraphQL */ `
       weight
       date
       owner
+      userEmail
       workoutID
       workout {
         id
         date
         owner
+        userEmail
         createdAt
         updatedAt
         _version
@@ -124,8 +146,11 @@ export const onUpdateExercise = /* GraphQL */ `
   }
 `;
 export const onDeleteExercise = /* GraphQL */ `
-  subscription OnDeleteExercise($filter: ModelSubscriptionExerciseFilterInput) {
-    onDeleteExercise(filter: $filter) {
+  subscription OnDeleteExercise(
+    $filter: ModelSubscriptionExerciseFilterInput
+    $owner: String
+  ) {
+    onDeleteExercise(filter: $filter, owner: $owner) {
       id
       name
       sets
@@ -133,11 +158,13 @@ export const onDeleteExercise = /* GraphQL */ `
       weight
       date
       owner
+      userEmail
       workoutID
       workout {
         id
         date
         owner
+        userEmail
         createdAt
         updatedAt
         _version

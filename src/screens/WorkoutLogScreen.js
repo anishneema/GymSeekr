@@ -45,17 +45,14 @@ const WorkoutLogScreen = ({ navigation }) => {
 
   const loadWorkoutLog = async (email) => {
     try {
-      const filter = {
-        owner: { eq: email }
-      };
-
       const result = await API.graphql({
         query: listWorkouts,
-        variables: { filter }
+      //  variables: { filter }
       });
 
       const workouts = result?.data?.listWorkouts?.items.filter(workout => !workout._deleted) || [];
       const sortedWorkouts = workouts.sort((a, b) => new Date(b.date) - new Date(a.date));
+      //console.log('Fetched workouts in log:', workouts);
       setWorkoutLog(sortedWorkouts);
     } catch (e) {
       console.error(e);

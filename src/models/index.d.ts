@@ -9,11 +9,11 @@ import { LazyLoading, LazyLoadingDisabled, AsyncCollection, AsyncItem } from "@a
 type EagerWorkout = {
   readonly [__modelMeta__]: {
     identifier: ManagedIdentifier<Workout, 'id'>;
-    readOnlyFields: 'createdAt' | 'updatedAt';
   };
   readonly id: string;
   readonly date: string;
-  readonly owner: string;
+  readonly owner?: string | null;
+  readonly userEmail?: string | null;
   readonly exercises?: (Exercise | null)[] | null;
   readonly createdAt?: string | null;
   readonly updatedAt?: string | null;
@@ -22,11 +22,11 @@ type EagerWorkout = {
 type LazyWorkout = {
   readonly [__modelMeta__]: {
     identifier: ManagedIdentifier<Workout, 'id'>;
-    readOnlyFields: 'createdAt' | 'updatedAt';
   };
   readonly id: string;
   readonly date: string;
-  readonly owner: string;
+  readonly owner?: string | null;
+  readonly userEmail?: string | null;
   readonly exercises: AsyncCollection<Exercise>;
   readonly createdAt?: string | null;
   readonly updatedAt?: string | null;
@@ -41,7 +41,6 @@ export declare const Workout: (new (init: ModelInit<Workout>) => Workout) & {
 type EagerExercise = {
   readonly [__modelMeta__]: {
     identifier: ManagedIdentifier<Exercise, 'id'>;
-    readOnlyFields: 'createdAt' | 'updatedAt';
   };
   readonly id: string;
   readonly name: string;
@@ -49,7 +48,8 @@ type EagerExercise = {
   readonly reps: number;
   readonly weight: number;
   readonly date: string;
-  readonly owner: string;
+  readonly owner?: string | null;
+  readonly userEmail?: string | null;
   readonly workoutID: string;
   readonly workout?: Workout | null;
   readonly createdAt?: string | null;
@@ -59,7 +59,6 @@ type EagerExercise = {
 type LazyExercise = {
   readonly [__modelMeta__]: {
     identifier: ManagedIdentifier<Exercise, 'id'>;
-    readOnlyFields: 'createdAt' | 'updatedAt';
   };
   readonly id: string;
   readonly name: string;
@@ -67,7 +66,8 @@ type LazyExercise = {
   readonly reps: number;
   readonly weight: number;
   readonly date: string;
-  readonly owner: string;
+  readonly owner?: string | null;
+  readonly userEmail?: string | null;
   readonly workoutID: string;
   readonly workout: AsyncItem<Workout | undefined>;
   readonly createdAt?: string | null;

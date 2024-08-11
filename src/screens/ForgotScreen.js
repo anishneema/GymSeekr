@@ -35,7 +35,7 @@ const ForgotScreen = ({ navigation }) => {
         );
         // Collect the confirmation code from the user and pass to confirmResetPassword.
         Alert.alert(`Confirmation code was sent to your email`);
-        navigation.navigate('Reset', {username: email, email});
+        navigation.navigate('Reset', {email});
         break;
       case 'DONE':
         console.log('Successfully reset password.');

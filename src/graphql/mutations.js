@@ -10,6 +10,7 @@ export const createWorkout = /* GraphQL */ `
       id
       date
       owner
+      userEmail
       exercises {
         nextToken
         startedAt
@@ -33,6 +34,7 @@ export const updateWorkout = /* GraphQL */ `
       id
       date
       owner
+      userEmail
       exercises {
         nextToken
         startedAt
@@ -56,6 +58,7 @@ export const deleteWorkout = /* GraphQL */ `
       id
       date
       owner
+      userEmail
       exercises {
         nextToken
         startedAt
@@ -83,18 +86,8 @@ export const createExercise = /* GraphQL */ `
       weight
       date
       owner
+      userEmail
       workoutID
-      workout {
-        id
-        date
-        owner
-        createdAt
-        updatedAt
-        _version
-        _deleted
-        _lastChangedAt
-        __typename
-      }
       createdAt
       updatedAt
       _version
@@ -117,11 +110,13 @@ export const updateExercise = /* GraphQL */ `
       weight
       date
       owner
+      userEmail
       workoutID
       workout {
         id
         date
         owner
+        userEmail
         createdAt
         updatedAt
         _version
@@ -151,11 +146,13 @@ export const deleteExercise = /* GraphQL */ `
       weight
       date
       owner
+      userEmail
       workoutID
       workout {
         id
         date
         owner
+        userEmail
         createdAt
         updatedAt
         _version

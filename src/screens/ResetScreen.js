@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { confirmResetPassword } from 'aws-amplify/auth';
 
 const ResetScreen = ({ navigation, route }) => {
-  const { username, email } = route.params;
+  const { email } = route.params;
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
@@ -27,6 +27,7 @@ const ResetScreen = ({ navigation, route }) => {
 
     try {
       await confirmResetPassword({ username: email, confirmationCode: verificationCode, newPassword });
+      Alert.alert('Success','Please login with new password.');
     } catch (error) {
       console.log(error);
     }

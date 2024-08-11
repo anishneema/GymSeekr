@@ -7,6 +7,7 @@ export const getWorkout = /* GraphQL */ `
       id
       date
       owner
+      userEmail
       exercises {
           items {
           name
@@ -42,6 +43,7 @@ export const listWorkouts = /* GraphQL */ `
         id
         date
         owner
+        userEmail
         createdAt
         updatedAt
         _version
@@ -84,6 +86,7 @@ export const syncWorkouts = /* GraphQL */ `
         id
         date
         owner
+        userEmail
         createdAt
         updatedAt
         _version
@@ -107,11 +110,13 @@ export const getExercise = /* GraphQL */ `
       weight
       date
       owner
+      userEmail
       workoutID
       workout {
         id
         date
         owner
+        userEmail
         createdAt
         updatedAt
         _version
@@ -143,6 +148,7 @@ export const listExercises = /* GraphQL */ `
         weight
         date
         owner
+        userEmail
         workoutID
         createdAt
         updatedAt
@@ -178,6 +184,7 @@ export const syncExercises = /* GraphQL */ `
         weight
         date
         owner
+        userEmail
         workoutID
         createdAt
         updatedAt
@@ -217,6 +224,7 @@ export const exercisesByWorkoutIDAndDate = /* GraphQL */ `
         weight
         date
         owner
+        userEmail
         workoutID
         createdAt
         updatedAt

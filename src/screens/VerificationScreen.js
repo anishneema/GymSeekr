@@ -4,7 +4,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { confirmSignUp } from 'aws-amplify/auth';
 
 const VerificationScreen = ({ route, navigation }) => {
-  const { username, email } = route.params;
+  const { email } = route.params;
   const [verificationCode, setVerificationCode] = useState('');
 
   async function handleSignUpConfirmation() {

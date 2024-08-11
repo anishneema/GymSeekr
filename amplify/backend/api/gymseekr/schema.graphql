@@ -1,23 +1,28 @@
 # This "input" configures a global authorization rule to enable public access to
 # all models in this schema. Learn more about authorization rules here: https://docs.amplify.aws/cli/graphql/authorization-rules
-input AMPLIFY { globalAuthRule: AuthRule = { allow: public } } # FOR TESTING ONLY!
+#input AMPLIFY { globalAuthRule: AuthRule = { allow: public } } # FOR TESTING ONLY!
 
-type Workout @model {
+type Workout @model @auth(rules: [{ allow: owner }]) {
   id: ID!
   date: AWSDateTime!
-  owner: String!
+  owner: String
+  userEmail: String
   exercises: [Exercise] @hasMany(indexName: "byWorkout", fields: ["id"])
+  createdAt: AWSDateTime
+  updatedAt: AWSDateTime
 }
 
-type Exercise @model {
+type Exercise @model @auth(rules: [{ allow: owner }]) {
   id: ID!
   name: String!
   sets: Int!
   reps: Int!
   weight: Float!
   date: AWSDateTime!
-  owner: String!
+  owner: String
+  userEmail: String
   workoutID: ID! @index(name: "byWorkout", sortKeyFields: ["date"])
   workout: Workout @belongsTo(fields: ["workoutID"])
+  createdAt: AWSDateTime
+  updatedAt: AWSDateTime
 }
-

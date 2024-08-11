@@ -45,8 +45,10 @@ const LoginScreen = ({ navigation }) => {
       navigateToMain();
       setIsLoggedIn(true);
     } catch (error) {
-      if (error.code === 'UserNotConfirmedException') {
+      if (error.name === 'UserNotConfirmedException') {
         navigation.navigate('Verification', { username: emailRef.current });
+      }else if(error.name === 'NotAuthorizedException'){
+            setError('Invalid email or password');
       } else {
         setError('Invalid email or password');
         console.error('Error signing in', error);
