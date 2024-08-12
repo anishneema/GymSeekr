@@ -2,7 +2,7 @@
   "expo": {
     "name": "GymSeekr",
     "slug": "GymSeekr",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -15,8 +15,6 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "JR66H6LAVK.com.aneema.GymSeekr",
       "config": {
         "googleMapsApiKey": ""
       }
@@ -26,7 +24,6 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-     "package": "com.anish_neema.GymSeekr",
      "config": {
        "googleMaps": {
          "apiKey": ""
