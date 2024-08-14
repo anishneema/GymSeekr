@@ -40,16 +40,23 @@ const LoginScreen = ({ navigation }) => {
   const handleLogin = useCallback(async () => {
     setLoading(true);
     try {
-      await signIn({ username: emailRef.current, password:passwordRef.current });
-      await EncryptedStorage.setItem('userEmail', emailRef.current);
-      navigateToMain();
-      setIsLoggedIn(true);
+      const signinOutput = await signIn({ username: emailRef.current, password:passwordRef.current });
+      if(signinOutput.isSignedIn){
+        await EncryptedStorage.setItem('userEmail', emailRef.current);
+        navigateToMain();
+        setIsLoggedIn(true);
+      }else{
+        if (signinOutput.nextStep.signInStep == 'CONFIRM_SIGN_UP'){
+          navigation.navigate('Verification', { username: emailRef.current });
+        }
+      }
     } catch (error) {
+      console.log(error);
       if (error.name === 'UserNotConfirmedException') {
         navigation.navigate('Verification', { username: emailRef.current });
-      }else if(error.name === 'NotAuthorizedException'){
+      } else if(error.name === 'NotAuthorizedException'){
             setError('Invalid email or password');
-      } else {
+      }else {
         setError('Invalid email or password');
         console.error('Error signing in', error);
       }

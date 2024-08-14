@@ -28,7 +28,7 @@ const RegistrationScreen = ({ navigation }) => {
       setIsSignUpComplete(result.isSignUpComplete);
 
       if(!isSignUpComplete){
-        navigation.navigate('Verification', { email });
+        navigation.navigate('Verification', { username:email });
       }else{
       // Navigate to the login screen after successful sign-up
         navigation.navigate('Login');

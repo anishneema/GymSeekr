@@ -15,8 +15,13 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "config": {
-        "googleMapsApiKey": ""
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We use your location to display nearby gyms. Manage access anytime in Settings > Privacy.",
+        "NSLocationAlwaysUsageDescription": "We use your location to display nearby gyms. Manage access anytime in Settings > Privacy.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "We use your location to display nearby gyms. Manage access anytime in Settings > Privacy."
+      },
+      "config":{
+        "googleMapsApiKey":""
       }
     },
     "android": {
@@ -24,6 +29,9 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "permissions": [
+        "ACCESS_FINE_LOCATION"
+      ],
      "config": {
        "googleMaps": {
          "apiKey": ""

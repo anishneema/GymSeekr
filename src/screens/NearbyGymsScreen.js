@@ -60,7 +60,9 @@ const NearbyGymScreen = () => {
   }, []);
 
   const getUserLocation = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
+    const { status } = await Location.requestForegroundPermissionsAsync({
+      purpose: 'GymSeekr needs your location to display nearby gyms. Manage access anytime in Settings > Privacy.'
+    });
     if (status !== 'granted') {
       Alert.alert('Permission Denied', 'Permission to access location was denied.');
       setMapRegion({
@@ -71,6 +73,7 @@ const NearbyGymScreen = () => {
       });
       return;
     }
+    
 
     const location = await Location.getCurrentPositionAsync({});
     setMapRegion({

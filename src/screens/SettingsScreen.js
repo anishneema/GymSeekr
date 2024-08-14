@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { signOut } from 'aws-amplify/auth';
+import { signOut, deleteUser } from 'aws-amplify/auth';
 import { Ionicons } from '@expo/vector-icons';
 import EncryptedStorage from 'react-native-encrypted-storage';
 
@@ -46,6 +46,37 @@ const SettingsScreen = ({ navigation }) => {
     );
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Confirm Account Deletion',
+      'Are you sure you want to delete your account? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete Account',
+          onPress: async () => {
+            try {
+              await deleteUser();
+              await EncryptedStorage.removeItem('userEmail');
+              Alert.alert('Success', 'Account Deleted! Sorry to see you go!');
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+              });
+            } catch (error) {
+              console.log('Error deleting account:', error);
+            }
+          },
+          style: 'destructive',
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.headerStripe} />
@@ -58,10 +89,16 @@ const SettingsScreen = ({ navigation }) => {
         </View>
       </View>
       <View style={styles.contentContainer}>
-        <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={24} color="#fff" style={styles.buttonIcon} />
-          <Text style={styles.buttonText}>Log Out</Text>
-        </TouchableOpacity>
+        <View style={styles.linkContainer}>
+          <TouchableOpacity style={styles.logoutLink} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={24} color={colors.primary} />
+            <Text style={styles.linkText}>Log Out</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.deleteLink} onPress={handleDeleteAccount}>
+            <Ionicons name="trash-outline" size={24} color={colors.primary} />
+            <Text style={styles.linkText}>Delete Account</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -94,7 +131,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     color: colors.white,
-    marginTop: 0, // Adjust this to position the text similarly to the HomeScreen
+    marginTop: 0,
   },
   settingsButton: {
     padding: 8,
@@ -105,26 +142,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
   },
-  button: {
+  linkContainer: {
+    position: 'relative',
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  logoutLink: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#007AFF',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginBottom: 20,
+    position: 'absolute',
+    top: 20,
+    left: 20,
   },
-  logoutButton: {
-    backgroundColor: '#d9534f',
+  deleteLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
   },
-  buttonText: {
-    color: '#fff',
+  linkText: {
+    color: colors.primary,
     fontWeight: 'bold',
     fontSize: 16,
-    marginLeft: 10,
-  },
-  buttonIcon: {
-    marginRight: 10,
+    marginLeft: 8,
   },
 });
 

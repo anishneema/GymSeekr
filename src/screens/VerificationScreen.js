@@ -4,13 +4,14 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { confirmSignUp } from 'aws-amplify/auth';
 
 const VerificationScreen = ({ route, navigation }) => {
-  const { email } = route.params;
+  const { username } = route.params;
   const [verificationCode, setVerificationCode] = useState('');
 
   async function handleSignUpConfirmation() {
     try {
+      
       const { isSignUpComplete, nextStep } = await confirmSignUp({
-        username:email,
+        username:username,
         confirmationCode:verificationCode
       });
       Alert.alert('Success', 'Sign-up confirmed. Please sign in.');
@@ -22,19 +23,16 @@ const VerificationScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Enter Verification Code</Text>
+      <Text style={styles.heading}>Complete Signup</Text>
       <TextInput
         style={styles.input}
-        placeholder="Verification Code"
+        placeholder="Enter Verification Code"
         value={verificationCode}
         onChangeText={setVerificationCode}
         keyboardType="numeric"
       />
       <TouchableOpacity style={styles.button} onPress={handleSignUpConfirmation}>
         <Text style={styles.buttonText}>Verify Code</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate('ForgotScreen')}>
-        <Text style={styles.backLink}>Back to Forgot Password</Text>
       </TouchableOpacity>
     </View>
   );
